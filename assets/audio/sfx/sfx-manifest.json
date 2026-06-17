@@ -1,0 +1,172 @@
+[
+  {
+    "key": "sfx_player_jump",
+    "title": "跳跃",
+    "category": "player",
+    "files": {
+      "ogg": "assets/audio/sfx/player/sfx_player_jump_01.ogg",
+      "mp3": "assets/audio/sfx/player/sfx_player_jump_01.mp3",
+      "wav": "assets/audio/sfx/player/sfx_player_jump_01.wav"
+    }
+  },
+  {
+    "key": "sfx_player_land",
+    "title": "落地",
+    "category": "player",
+    "files": {
+      "ogg": "assets/audio/sfx/player/sfx_player_land_01.ogg",
+      "mp3": "assets/audio/sfx/player/sfx_player_land_01.mp3",
+      "wav": "assets/audio/sfx/player/sfx_player_land_01.wav"
+    }
+  },
+  {
+    "key": "sfx_player_stomp",
+    "title": "踩怪",
+    "category": "player",
+    "files": {
+      "ogg": "assets/audio/sfx/player/sfx_player_stomp_01.ogg",
+      "mp3": "assets/audio/sfx/player/sfx_player_stomp_01.mp3",
+      "wav": "assets/audio/sfx/player/sfx_player_stomp_01.wav"
+    }
+  },
+  {
+    "key": "sfx_player_hurt",
+    "title": "受伤",
+    "category": "player",
+    "files": {
+      "ogg": "assets/audio/sfx/player/sfx_player_hurt_01.ogg",
+      "mp3": "assets/audio/sfx/player/sfx_player_hurt_01.mp3",
+      "wav": "assets/audio/sfx/player/sfx_player_hurt_01.wav"
+    }
+  },
+  {
+    "key": "sfx_player_cry",
+    "title": "哭哭失败",
+    "category": "player",
+    "files": {
+      "ogg": "assets/audio/sfx/player/sfx_player_cry_01.ogg",
+      "mp3": "assets/audio/sfx/player/sfx_player_cry_01.mp3",
+      "wav": "assets/audio/sfx/player/sfx_player_cry_01.wav"
+    }
+  },
+  {
+    "key": "sfx_coin_pickup",
+    "title": "捡金币",
+    "category": "items",
+    "files": {
+      "ogg": "assets/audio/sfx/items/sfx_coin_pickup_01.ogg",
+      "mp3": "assets/audio/sfx/items/sfx_coin_pickup_01.mp3",
+      "wav": "assets/audio/sfx/items/sfx_coin_pickup_01.wav"
+    }
+  },
+  {
+    "key": "sfx_item_pickup",
+    "title": "捡道具",
+    "category": "items",
+    "files": {
+      "ogg": "assets/audio/sfx/items/sfx_item_pickup_01.ogg",
+      "mp3": "assets/audio/sfx/items/sfx_item_pickup_01.mp3",
+      "wav": "assets/audio/sfx/items/sfx_item_pickup_01.wav"
+    }
+  },
+  {
+    "key": "sfx_fire_candy_shoot",
+    "title": "火球糖发射",
+    "category": "items",
+    "files": {
+      "ogg": "assets/audio/sfx/items/sfx_fire_candy_shoot_01.ogg",
+      "mp3": "assets/audio/sfx/items/sfx_fire_candy_shoot_01.mp3",
+      "wav": "assets/audio/sfx/items/sfx_fire_candy_shoot_01.wav"
+    }
+  },
+  {
+    "key": "sfx_toy_hammer_hit",
+    "title": "玩具锤命中",
+    "category": "items",
+    "files": {
+      "ogg": "assets/audio/sfx/items/sfx_toy_hammer_hit_01.ogg",
+      "mp3": "assets/audio/sfx/items/sfx_toy_hammer_hit_01.mp3",
+      "wav": "assets/audio/sfx/items/sfx_toy_hammer_hit_01.wav"
+    }
+  },
+  {
+    "key": "sfx_bubble_shield_break",
+    "title": "泡泡盾破裂",
+    "category": "items",
+    "files": {
+      "ogg": "assets/audio/sfx/items/sfx_bubble_shield_break_01.ogg",
+      "mp3": "assets/audio/sfx/items/sfx_bubble_shield_break_01.mp3",
+      "wav": "assets/audio/sfx/items/sfx_bubble_shield_break_01.wav"
+    }
+  },
+  {
+    "key": "sfx_sister_hit",
+    "title": "姐姐受击",
+    "category": "enemies",
+    "files": {
+      "ogg": "assets/audio/sfx/enemies/sfx_sister_hit_01.ogg",
+      "mp3": "assets/audio/sfx/enemies/sfx_sister_hit_01.mp3",
+      "wav": "assets/audio/sfx/enemies/sfx_sister_hit_01.wav"
+    }
+  },
+  {
+    "key": "sfx_headphone_wave",
+    "title": "耳机姐姐音波",
+    "category": "enemies",
+    "files": {
+      "ogg": "assets/audio/sfx/enemies/sfx_headphone_wave_01.ogg",
+      "mp3": "assets/audio/sfx/enemies/sfx_headphone_wave_01.mp3",
+      "wav": "assets/audio/sfx/enemies/sfx_headphone_wave_01.wav"
+    }
+  },
+  {
+    "key": "sfx_pipe_sister_pop",
+    "title": "管道姐姐探头",
+    "category": "enemies",
+    "files": {
+      "ogg": "assets/audio/sfx/enemies/sfx_pipe_sister_pop_01.ogg",
+      "mp3": "assets/audio/sfx/enemies/sfx_pipe_sister_pop_01.mp3",
+      "wav": "assets/audio/sfx/enemies/sfx_pipe_sister_pop_01.wav"
+    }
+  },
+  {
+    "key": "sfx_boss_book_throw",
+    "title": "Boss 扔作业本",
+    "category": "enemies",
+    "files": {
+      "ogg": "assets/audio/sfx/enemies/sfx_boss_book_throw_01.ogg",
+      "mp3": "assets/audio/sfx/enemies/sfx_boss_book_throw_01.mp3",
+      "wav": "assets/audio/sfx/enemies/sfx_boss_book_throw_01.wav"
+    }
+  },
+  {
+    "key": "sfx_question_block",
+    "title": "问号砖",
+    "category": "world",
+    "files": {
+      "ogg": "assets/audio/sfx/world/sfx_question_block_01.ogg",
+      "mp3": "assets/audio/sfx/world/sfx_question_block_01.mp3",
+      "wav": "assets/audio/sfx/world/sfx_question_block_01.wav"
+    }
+  },
+  {
+    "key": "sfx_goal_flag",
+    "title": "终点旗",
+    "category": "world",
+    "files": {
+      "ogg": "assets/audio/sfx/world/sfx_goal_flag_01.ogg",
+      "mp3": "assets/audio/sfx/world/sfx_goal_flag_01.mp3",
+      "wav": "assets/audio/sfx/world/sfx_goal_flag_01.wav"
+    }
+  },
+  {
+    "key": "sfx_ui_confirm",
+    "title": "菜单确认",
+    "category": "ui",
+    "files": {
+      "ogg": "assets/audio/sfx/ui/sfx_ui_confirm_01.ogg",
+      "mp3": "assets/audio/sfx/ui/sfx_ui_confirm_01.mp3",
+      "wav": "assets/audio/sfx/ui/sfx_ui_confirm_01.wav"
+    }
+  }
+]

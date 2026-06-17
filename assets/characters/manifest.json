@@ -1,0 +1,104 @@
+{
+  "version": 1,
+  "style": "2.5D chibi platformer, transparent PNG",
+  "assets": [
+    {
+      "id": "brother_player",
+      "name": "弟弟玩家",
+      "role": "player",
+      "path": "assets/characters/png/brother_player.png",
+      "sourceChromaPath": "assets/characters/source_chroma/brother_player.png",
+      "recommendedScale": 0.16,
+      "width": 649,
+      "height": 1149,
+      "format": "png-rgba-transparent",
+      "preloadKey": "brother_player"
+    },
+    {
+      "id": "brother_cry_defeat",
+      "name": "弟弟失败哭哭",
+      "role": "ending_state",
+      "trigger": "player_health_zero",
+      "path": "assets/characters/png/brother_cry_defeat.png",
+      "sourceChromaPath": "assets/characters/source_chroma/brother_cry_defeat.png",
+      "recommendedScale": 0.16,
+      "width": 818,
+      "height": 993,
+      "format": "png-rgba-transparent",
+      "preloadKey": "brother_cry_defeat"
+    },
+    {
+      "id": "sister_small",
+      "name": "姐姐小怪",
+      "role": "enemy",
+      "path": "assets/characters/png/sister_small.png",
+      "sourceChromaPath": "assets/characters/source_chroma/sister_small.png",
+      "recommendedScale": 0.14,
+      "width": 610,
+      "height": 1033,
+      "format": "png-rgba-transparent",
+      "preloadKey": "sister_small"
+    },
+    {
+      "id": "sister_headphone",
+      "name": "耳机姐姐",
+      "role": "enemy",
+      "path": "assets/characters/png/sister_headphone.png",
+      "sourceChromaPath": "assets/characters/source_chroma/sister_headphone.png",
+      "recommendedScale": 0.14,
+      "width": 561,
+      "height": 995,
+      "format": "png-rgba-transparent",
+      "preloadKey": "sister_headphone"
+    },
+    {
+      "id": "sister_balloon",
+      "name": "气球姐姐",
+      "role": "enemy",
+      "path": "assets/characters/png/sister_balloon.png",
+      "sourceChromaPath": "assets/characters/source_chroma/sister_balloon.png",
+      "recommendedScale": 0.14,
+      "width": 725,
+      "height": 935,
+      "format": "png-rgba-transparent",
+      "preloadKey": "sister_balloon"
+    },
+    {
+      "id": "sister_pipe",
+      "name": "管道姐姐",
+      "role": "enemy",
+      "path": "assets/characters/png/sister_pipe.png",
+      "sourceChromaPath": "assets/characters/source_chroma/sister_pipe.png",
+      "recommendedScale": 0.16,
+      "width": 663,
+      "height": 1004,
+      "format": "png-rgba-transparent",
+      "preloadKey": "sister_pipe"
+    },
+    {
+      "id": "sister_boss",
+      "name": "Boss 姐姐",
+      "role": "boss",
+      "path": "assets/characters/png/sister_boss.png",
+      "sourceChromaPath": "assets/characters/source_chroma/sister_boss.png",
+      "recommendedScale": 0.18,
+      "width": 1029,
+      "height": 1025,
+      "format": "png-rgba-transparent",
+      "preloadKey": "sister_boss"
+    },
+    {
+      "id": "sister_cry_defeated",
+      "name": "姐姐失败哭哭",
+      "role": "ending_state",
+      "trigger": "sister_or_boss_defeated",
+      "path": "assets/characters/png/sister_cry_defeated.png",
+      "sourceChromaPath": "assets/characters/source_chroma/sister_cry_defeated.png",
+      "recommendedScale": 0.16,
+      "width": 728,
+      "height": 989,
+      "format": "png-rgba-transparent",
+      "preloadKey": "sister_cry_defeated"
+    }
+  ]
+}

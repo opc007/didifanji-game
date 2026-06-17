@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>弟弟反击战音乐试听</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f7f8fb;
+      color: #1f2633;
+    }
+
+    body {
+      margin: 0;
+      padding: 32px;
+    }
+
+    main {
+      max-width: 880px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 30px;
+      line-height: 1.2;
+    }
+
+    .intro {
+      margin: 0 0 28px;
+      color: #667085;
+      line-height: 1.7;
+    }
+
+    .track-list {
+      display: grid;
+      gap: 14px;
+    }
+
+    .track {
+      padding: 18px;
+      background: #ffffff;
+      border: 1px solid #e3e7ef;
+      border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(31, 38, 51, 0.06);
+    }
+
+    .track-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 12px;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .meta {
+      color: #667085;
+      font-size: 14px;
+      white-space: nowrap;
+    }
+
+    .usage {
+      margin: 0 0 12px;
+      color: #46515f;
+      line-height: 1.6;
+    }
+
+    audio {
+      width: 100%;
+      display: block;
+    }
+
+    @media (max-width: 640px) {
+      body {
+        padding: 20px;
+      }
+
+      .track-header {
+        display: block;
+      }
+
+      .meta {
+        margin-top: 4px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>《弟弟反击战》音乐试听</h1>
+    <p class="intro">这是当前生成的游戏音乐试听版，后续可以继续精修编曲和音色。</p>
+
+    <section class="track-list">
+      <article class="track">
+        <div class="track-header">
+          <h2>开始菜单音乐</h2>
+          <div class="meta">BPM 118 / 循环</div>
+        </div>
+        <p class="usage">开始界面、主菜单、准备进入游戏时播放，情绪更欢迎、更轻松。</p>
+        <audio controls src="assets/audio/music/bgm_start_menu.mp3"></audio>
+      </article>
+
+      <article class="track">
+        <div class="track-header">
+          <h2>游戏过程音乐</h2>
+          <div class="meta">BPM 132 / 循环</div>
+        </div>
+        <p class="usage">普通跑图、跳跃、捡金币、撞问号砖时播放。</p>
+        <audio controls src="assets/audio/music/bgm_gameplay_loop.mp3"></audio>
+      </article>
+
+      <article class="track">
+        <div class="track-header">
+          <h2>打斗音乐</h2>
+          <div class="meta">BPM 150 / 循环</div>
+        </div>
+        <p class="usage">姐姐敌人密集、Boss 战、追逐和反击时播放。</p>
+        <audio controls src="assets/audio/music/bgm_fight_loop.mp3"></audio>
+      </article>
+
+      <article class="track">
+        <div class="track-header">
+          <h2>胜利音乐</h2>
+          <div class="meta">BPM 144 / 加长短音乐</div>
+        </div>
+        <p class="usage">通关、打败 Boss 姐姐、显示“弟弟赢啦！”时播放，现在有更完整的开心展开。</p>
+        <audio controls src="assets/audio/music/jingle_victory.mp3"></audio>
+      </article>
+
+      <article class="track">
+        <div class="track-header">
+          <h2>结束音乐</h2>
+          <div class="meta">BPM 88 / 加长短音乐</div>
+        </div>
+        <p class="usage">弟弟血量归零、坐地哭哭、关卡重启前播放，现在后半段会更像“再来一次”。</p>
+        <audio controls src="assets/audio/music/jingle_game_over.mp3"></audio>
+      </article>
+
+      <article class="track">
+        <div class="track-header">
+          <h2>弟弟单独音乐</h2>
+          <div class="meta">BPM 126 / 可循环</div>
+        </div>
+        <p class="usage">弟弟角色展示、开场幻想、获得强力道具时播放。</p>
+        <audio controls src="assets/audio/music/theme_brother.mp3"></audio>
+      </article>
+
+      <article class="track">
+        <div class="track-header">
+          <h2>姐姐单独音乐</h2>
+          <div class="meta">BPM 112 / 可循环</div>
+        </div>
+        <p class="usage">姐姐登场、Boss 预告、图鉴或过场动画时播放。</p>
+        <audio controls src="assets/audio/music/theme_sister.mp3"></audio>
+      </article>
+    </section>
+  </main>
+</body>
+</html>

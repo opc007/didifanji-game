@@ -1,0 +1,52 @@
+{
+  "transitions": [
+    {
+      "key": "start_screen",
+      "title": "开始画面",
+      "sceneState": "start_menu",
+      "transitionRole": "game_start",
+      "usage": "主菜单、首次点击开始前、解锁浏览器音频前",
+      "image": "assets/transitions/start_screen.png",
+      "background": "assets/transitions/raw/start_background.png",
+      "width": 1920,
+      "height": 1080,
+      "musicKey": "theme_brother",
+      "trigger": "enter_start_menu",
+      "primaryText": "弟弟反击战",
+      "actionText": "开始游戏",
+      "hintText": "按空格键开始"
+    },
+    {
+      "key": "game_over_screen",
+      "title": "失败画面",
+      "sceneState": "game_over",
+      "transitionRole": "failure_restart",
+      "usage": "弟弟血量归零、哭哭重启前",
+      "image": "assets/transitions/game_over_screen.png",
+      "background": "assets/transitions/raw/game_over_background.png",
+      "width": 1920,
+      "height": 1080,
+      "musicKey": "jingle_game_over",
+      "trigger": "player_health_zero",
+      "primaryText": "弟弟哭啦！",
+      "actionText": "重新挑战",
+      "hintText": "按 R 或空格键重来"
+    },
+    {
+      "key": "victory_screen",
+      "title": "胜利画面",
+      "sceneState": "victory",
+      "transitionRole": "stage_clear",
+      "usage": "通关、击败 Boss、进入结算或下一关前",
+      "image": "assets/transitions/victory_screen.png",
+      "background": "assets/transitions/raw/victory_background.png",
+      "width": 1920,
+      "height": 1080,
+      "musicKey": "jingle_victory",
+      "trigger": "stage_clear_or_boss_defeated",
+      "primaryText": "弟弟赢啦！",
+      "actionText": "继续下一关",
+      "hintText": "按空格键继续"
+    }
+  ]
+}

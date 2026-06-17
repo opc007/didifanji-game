@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>弟弟反击战音效试听</title>
+  <style>
+    :root {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f7f8fb;
+      color: #202734;
+    }
+
+    body {
+      margin: 0;
+      padding: 32px;
+    }
+
+    main {
+      max-width: 920px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 30px;
+    }
+
+    .intro {
+      margin: 0 0 26px;
+      color: #667085;
+      line-height: 1.7;
+    }
+
+    .grid {
+      display: grid;
+      gap: 14px;
+    }
+
+    .sfx {
+      padding: 16px;
+      border: 1px solid #e2e7ef;
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 8px 22px rgba(31, 38, 51, 0.055);
+    }
+
+    .row {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: baseline;
+      margin-bottom: 10px;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 17px;
+    }
+
+    code {
+      color: #667085;
+      font-size: 13px;
+    }
+
+    audio {
+      display: block;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>《弟弟反击战》音效试听</h1>
+    <p class="intro">这是第一版核心音效样本，偏合成器玩具感，用来确认方向。正式版后续可以加更多变体和真实材质采样。</p>
+    <section class="grid" id="list"></section>
+  </main>
+
+  <script>
+    const sounds = [
+      ["跳跃", "sfx_player_jump", "assets/audio/sfx/player/sfx_player_jump_01.mp3"],
+      ["落地", "sfx_player_land", "assets/audio/sfx/player/sfx_player_land_01.mp3"],
+      ["踩怪", "sfx_player_stomp", "assets/audio/sfx/player/sfx_player_stomp_01.mp3"],
+      ["受伤", "sfx_player_hurt", "assets/audio/sfx/player/sfx_player_hurt_01.mp3"],
+      ["哭哭失败", "sfx_player_cry", "assets/audio/sfx/player/sfx_player_cry_01.mp3"],
+      ["捡金币", "sfx_coin_pickup", "assets/audio/sfx/items/sfx_coin_pickup_01.mp3"],
+      ["捡道具", "sfx_item_pickup", "assets/audio/sfx/items/sfx_item_pickup_01.mp3"],
+      ["火球糖发射", "sfx_fire_candy_shoot", "assets/audio/sfx/items/sfx_fire_candy_shoot_01.mp3"],
+      ["玩具锤命中", "sfx_toy_hammer_hit", "assets/audio/sfx/items/sfx_toy_hammer_hit_01.mp3"],
+      ["泡泡盾破裂", "sfx_bubble_shield_break", "assets/audio/sfx/items/sfx_bubble_shield_break_01.mp3"],
+      ["姐姐受击", "sfx_sister_hit", "assets/audio/sfx/enemies/sfx_sister_hit_01.mp3"],
+      ["耳机姐姐音波", "sfx_headphone_wave", "assets/audio/sfx/enemies/sfx_headphone_wave_01.mp3"],
+      ["管道姐姐探头", "sfx_pipe_sister_pop", "assets/audio/sfx/enemies/sfx_pipe_sister_pop_01.mp3"],
+      ["Boss 扔作业本", "sfx_boss_book_throw", "assets/audio/sfx/enemies/sfx_boss_book_throw_01.mp3"],
+      ["问号砖", "sfx_question_block", "assets/audio/sfx/world/sfx_question_block_01.mp3"],
+      ["终点旗", "sfx_goal_flag", "assets/audio/sfx/world/sfx_goal_flag_01.mp3"],
+      ["菜单确认", "sfx_ui_confirm", "assets/audio/sfx/ui/sfx_ui_confirm_01.mp3"],
+    ];
+
+    const list = document.querySelector("#list");
+
+    for (const [title, key, src] of sounds) {
+      const article = document.createElement("article");
+      article.className = "sfx";
+      article.innerHTML = `
+        <div class="row">
+          <h2>${title}</h2>
+          <code>${key}</code>
+        </div>
+        <audio controls preload="metadata" src="${src}"></audio>
+      `;
+      list.appendChild(article);
+    }
+  </script>
+</body>
+</html>

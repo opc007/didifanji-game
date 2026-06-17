@@ -1,0 +1,93 @@
+[
+  {
+    "key": "bgm_start_menu",
+    "title": "开始菜单音乐",
+    "bpm": 118,
+    "loop": true,
+    "usage": "开始界面、主菜单、准备进入游戏",
+    "files": {
+      "ogg": "assets/audio/music/bgm_start_menu.ogg",
+      "mp3": "assets/audio/music/bgm_start_menu.mp3",
+      "wav": "assets/audio/music/bgm_start_menu.wav",
+      "midi": "assets/audio/music/bgm_start_menu.mid"
+    }
+  },
+  {
+    "key": "bgm_gameplay_loop",
+    "title": "游戏过程音乐",
+    "bpm": 132,
+    "loop": true,
+    "usage": "普通跑图、跳跃、金币收集",
+    "files": {
+      "ogg": "assets/audio/music/bgm_gameplay_loop.ogg",
+      "mp3": "assets/audio/music/bgm_gameplay_loop.mp3",
+      "wav": "assets/audio/music/bgm_gameplay_loop.wav",
+      "midi": "assets/audio/music/bgm_gameplay_loop.mid"
+    }
+  },
+  {
+    "key": "bgm_fight_loop",
+    "title": "打斗音乐",
+    "bpm": 150,
+    "loop": true,
+    "usage": "敌人密集、Boss 战",
+    "files": {
+      "ogg": "assets/audio/music/bgm_fight_loop.ogg",
+      "mp3": "assets/audio/music/bgm_fight_loop.mp3",
+      "wav": "assets/audio/music/bgm_fight_loop.wav",
+      "midi": "assets/audio/music/bgm_fight_loop.mid"
+    }
+  },
+  {
+    "key": "jingle_victory",
+    "title": "胜利音乐",
+    "bpm": 144,
+    "loop": false,
+    "usage": "通关、击败 Boss",
+    "files": {
+      "ogg": "assets/audio/music/jingle_victory.ogg",
+      "mp3": "assets/audio/music/jingle_victory.mp3",
+      "wav": "assets/audio/music/jingle_victory.wav",
+      "midi": "assets/audio/music/jingle_victory.mid"
+    }
+  },
+  {
+    "key": "jingle_game_over",
+    "title": "结束音乐",
+    "bpm": 88,
+    "loop": false,
+    "usage": "弟弟哭哭、关卡重启",
+    "files": {
+      "ogg": "assets/audio/music/jingle_game_over.ogg",
+      "mp3": "assets/audio/music/jingle_game_over.mp3",
+      "wav": "assets/audio/music/jingle_game_over.wav",
+      "midi": "assets/audio/music/jingle_game_over.mid"
+    }
+  },
+  {
+    "key": "theme_brother",
+    "title": "弟弟单独音乐",
+    "bpm": 126,
+    "loop": true,
+    "usage": "角色展示、开场幻想",
+    "files": {
+      "ogg": "assets/audio/music/theme_brother.ogg",
+      "mp3": "assets/audio/music/theme_brother.mp3",
+      "wav": "assets/audio/music/theme_brother.wav",
+      "midi": "assets/audio/music/theme_brother.mid"
+    }
+  },
+  {
+    "key": "theme_sister",
+    "title": "姐姐单独音乐",
+    "bpm": 112,
+    "loop": true,
+    "usage": "姐姐登场、图鉴、过场",
+    "files": {
+      "ogg": "assets/audio/music/theme_sister.ogg",
+      "mp3": "assets/audio/music/theme_sister.mp3",
+      "wav": "assets/audio/music/theme_sister.wav",
+      "midi": "assets/audio/music/theme_sister.mid"
+    }
+  }
+]

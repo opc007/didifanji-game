@@ -1,0 +1,335 @@
+{
+  "version": 1,
+  "updated": "2026-05-28",
+  "notes": "Unified audio manifest for Phaser preload and AudioManager lookup. Prefer ogg first, mp3 fallback.",
+  "music": [
+    {
+      "key": "bgm_start_menu",
+      "title": "开始菜单音乐",
+      "bus": "music",
+      "bpm": 118,
+      "loop": true,
+      "volume": 0.55,
+      "usage": "开始界面、主菜单、准备进入游戏",
+      "files": {
+        "ogg": "assets/audio/music/bgm_start_menu.ogg",
+        "mp3": "assets/audio/music/bgm_start_menu.mp3",
+        "wav": "assets/audio/music/bgm_start_menu.wav",
+        "midi": "assets/audio/music/bgm_start_menu.mid"
+      }
+    },
+    {
+      "key": "bgm_gameplay_loop",
+      "title": "游戏过程音乐",
+      "bus": "music",
+      "bpm": 132,
+      "loop": true,
+      "volume": 0.55,
+      "usage": "普通跑图、跳跃、金币收集",
+      "files": {
+        "ogg": "assets/audio/music/bgm_gameplay_loop.ogg",
+        "mp3": "assets/audio/music/bgm_gameplay_loop.mp3",
+        "wav": "assets/audio/music/bgm_gameplay_loop.wav",
+        "midi": "assets/audio/music/bgm_gameplay_loop.mid"
+      }
+    },
+    {
+      "key": "bgm_fight_loop",
+      "title": "打斗音乐",
+      "bus": "music",
+      "bpm": 150,
+      "loop": true,
+      "volume": 0.6,
+      "usage": "敌人密集、Boss 战",
+      "files": {
+        "ogg": "assets/audio/music/bgm_fight_loop.ogg",
+        "mp3": "assets/audio/music/bgm_fight_loop.mp3",
+        "wav": "assets/audio/music/bgm_fight_loop.wav",
+        "midi": "assets/audio/music/bgm_fight_loop.mid"
+      }
+    },
+    {
+      "key": "jingle_victory",
+      "title": "胜利音乐",
+      "bus": "music",
+      "bpm": 144,
+      "loop": false,
+      "volume": 0.75,
+      "usage": "通关、击败 Boss",
+      "files": {
+        "ogg": "assets/audio/music/jingle_victory.ogg",
+        "mp3": "assets/audio/music/jingle_victory.mp3",
+        "wav": "assets/audio/music/jingle_victory.wav",
+        "midi": "assets/audio/music/jingle_victory.mid"
+      }
+    },
+    {
+      "key": "jingle_game_over",
+      "title": "结束音乐",
+      "bus": "music",
+      "bpm": 88,
+      "loop": false,
+      "volume": 0.75,
+      "usage": "弟弟哭哭、关卡重启",
+      "files": {
+        "ogg": "assets/audio/music/jingle_game_over.ogg",
+        "mp3": "assets/audio/music/jingle_game_over.mp3",
+        "wav": "assets/audio/music/jingle_game_over.wav",
+        "midi": "assets/audio/music/jingle_game_over.mid"
+      }
+    },
+    {
+      "key": "theme_brother",
+      "title": "弟弟单独音乐",
+      "bus": "music",
+      "bpm": 126,
+      "loop": true,
+      "volume": 0.55,
+      "usage": "角色展示、开场幻想",
+      "files": {
+        "ogg": "assets/audio/music/theme_brother.ogg",
+        "mp3": "assets/audio/music/theme_brother.mp3",
+        "wav": "assets/audio/music/theme_brother.wav",
+        "midi": "assets/audio/music/theme_brother.mid"
+      }
+    },
+    {
+      "key": "theme_sister",
+      "title": "姐姐单独音乐",
+      "bus": "music",
+      "bpm": 112,
+      "loop": true,
+      "volume": 0.55,
+      "usage": "姐姐登场、图鉴、过场",
+      "files": {
+        "ogg": "assets/audio/music/theme_sister.ogg",
+        "mp3": "assets/audio/music/theme_sister.mp3",
+        "wav": "assets/audio/music/theme_sister.wav",
+        "midi": "assets/audio/music/theme_sister.mid"
+      }
+    }
+  ],
+  "sfx": [
+    {
+      "key": "sfx_player_jump",
+      "title": "跳跃",
+      "bus": "sfx",
+      "category": "player",
+      "volume": 0.75,
+      "usage": "按跳跃键起跳",
+      "files": {
+        "ogg": "assets/audio/sfx/player/sfx_player_jump_01.ogg",
+        "mp3": "assets/audio/sfx/player/sfx_player_jump_01.mp3",
+        "wav": "assets/audio/sfx/player/sfx_player_jump_01.wav"
+      }
+    },
+    {
+      "key": "sfx_player_land",
+      "title": "落地",
+      "bus": "sfx",
+      "category": "player",
+      "volume": 0.55,
+      "usage": "玩家落到地面",
+      "files": {
+        "ogg": "assets/audio/sfx/player/sfx_player_land_01.ogg",
+        "mp3": "assets/audio/sfx/player/sfx_player_land_01.mp3",
+        "wav": "assets/audio/sfx/player/sfx_player_land_01.wav"
+      }
+    },
+    {
+      "key": "sfx_player_stomp",
+      "title": "踩怪",
+      "bus": "sfx",
+      "category": "player",
+      "volume": 0.8,
+      "usage": "踩中姐姐小怪",
+      "files": {
+        "ogg": "assets/audio/sfx/player/sfx_player_stomp_01.ogg",
+        "mp3": "assets/audio/sfx/player/sfx_player_stomp_01.mp3",
+        "wav": "assets/audio/sfx/player/sfx_player_stomp_01.wav"
+      }
+    },
+    {
+      "key": "sfx_player_hurt",
+      "title": "受伤",
+      "bus": "sfx",
+      "category": "player",
+      "volume": 0.85,
+      "usage": "弟弟受到伤害",
+      "files": {
+        "ogg": "assets/audio/sfx/player/sfx_player_hurt_01.ogg",
+        "mp3": "assets/audio/sfx/player/sfx_player_hurt_01.mp3",
+        "wav": "assets/audio/sfx/player/sfx_player_hurt_01.wav"
+      }
+    },
+    {
+      "key": "sfx_player_cry",
+      "title": "哭哭失败",
+      "bus": "sfx",
+      "category": "player",
+      "volume": 0.85,
+      "usage": "血量归零，弟弟坐地哭哭",
+      "files": {
+        "ogg": "assets/audio/sfx/player/sfx_player_cry_01.ogg",
+        "mp3": "assets/audio/sfx/player/sfx_player_cry_01.mp3",
+        "wav": "assets/audio/sfx/player/sfx_player_cry_01.wav"
+      }
+    },
+    {
+      "key": "sfx_coin_pickup",
+      "title": "捡金币",
+      "bus": "sfx",
+      "category": "items",
+      "volume": 0.7,
+      "usage": "拾取金币",
+      "files": {
+        "ogg": "assets/audio/sfx/items/sfx_coin_pickup_01.ogg",
+        "mp3": "assets/audio/sfx/items/sfx_coin_pickup_01.mp3",
+        "wav": "assets/audio/sfx/items/sfx_coin_pickup_01.wav"
+      }
+    },
+    {
+      "key": "sfx_item_pickup",
+      "title": "捡道具",
+      "bus": "sfx",
+      "category": "items",
+      "volume": 0.8,
+      "usage": "拾取随机道具",
+      "files": {
+        "ogg": "assets/audio/sfx/items/sfx_item_pickup_01.ogg",
+        "mp3": "assets/audio/sfx/items/sfx_item_pickup_01.mp3",
+        "wav": "assets/audio/sfx/items/sfx_item_pickup_01.wav"
+      }
+    },
+    {
+      "key": "sfx_fire_candy_shoot",
+      "title": "火球糖发射",
+      "bus": "sfx",
+      "category": "items",
+      "volume": 0.75,
+      "usage": "使用火球糖发射火球",
+      "files": {
+        "ogg": "assets/audio/sfx/items/sfx_fire_candy_shoot_01.ogg",
+        "mp3": "assets/audio/sfx/items/sfx_fire_candy_shoot_01.mp3",
+        "wav": "assets/audio/sfx/items/sfx_fire_candy_shoot_01.wav"
+      }
+    },
+    {
+      "key": "sfx_toy_hammer_hit",
+      "title": "玩具锤命中",
+      "bus": "sfx",
+      "category": "items",
+      "volume": 0.8,
+      "usage": "玩具锤命中敌人或砖块",
+      "files": {
+        "ogg": "assets/audio/sfx/items/sfx_toy_hammer_hit_01.ogg",
+        "mp3": "assets/audio/sfx/items/sfx_toy_hammer_hit_01.mp3",
+        "wav": "assets/audio/sfx/items/sfx_toy_hammer_hit_01.wav"
+      }
+    },
+    {
+      "key": "sfx_bubble_shield_break",
+      "title": "泡泡盾破裂",
+      "bus": "sfx",
+      "category": "items",
+      "volume": 0.75,
+      "usage": "泡泡盾抵挡伤害后破裂",
+      "files": {
+        "ogg": "assets/audio/sfx/items/sfx_bubble_shield_break_01.ogg",
+        "mp3": "assets/audio/sfx/items/sfx_bubble_shield_break_01.mp3",
+        "wav": "assets/audio/sfx/items/sfx_bubble_shield_break_01.wav"
+      }
+    },
+    {
+      "key": "sfx_sister_hit",
+      "title": "姐姐受击",
+      "bus": "sfx",
+      "category": "enemies",
+      "volume": 0.7,
+      "usage": "姐姐敌人被攻击命中",
+      "files": {
+        "ogg": "assets/audio/sfx/enemies/sfx_sister_hit_01.ogg",
+        "mp3": "assets/audio/sfx/enemies/sfx_sister_hit_01.mp3",
+        "wav": "assets/audio/sfx/enemies/sfx_sister_hit_01.wav"
+      }
+    },
+    {
+      "key": "sfx_headphone_wave",
+      "title": "耳机姐姐音波",
+      "bus": "sfx",
+      "category": "enemies",
+      "volume": 0.65,
+      "usage": "耳机姐姐释放横向音波",
+      "files": {
+        "ogg": "assets/audio/sfx/enemies/sfx_headphone_wave_01.ogg",
+        "mp3": "assets/audio/sfx/enemies/sfx_headphone_wave_01.mp3",
+        "wav": "assets/audio/sfx/enemies/sfx_headphone_wave_01.wav"
+      }
+    },
+    {
+      "key": "sfx_pipe_sister_pop",
+      "title": "管道姐姐探头",
+      "bus": "sfx",
+      "category": "enemies",
+      "volume": 0.7,
+      "usage": "管道姐姐从管道里探头",
+      "files": {
+        "ogg": "assets/audio/sfx/enemies/sfx_pipe_sister_pop_01.ogg",
+        "mp3": "assets/audio/sfx/enemies/sfx_pipe_sister_pop_01.mp3",
+        "wav": "assets/audio/sfx/enemies/sfx_pipe_sister_pop_01.wav"
+      }
+    },
+    {
+      "key": "sfx_boss_book_throw",
+      "title": "Boss 扔作业本",
+      "bus": "sfx",
+      "category": "enemies",
+      "volume": 0.75,
+      "usage": "Boss 姐姐扔出作业本攻击",
+      "files": {
+        "ogg": "assets/audio/sfx/enemies/sfx_boss_book_throw_01.ogg",
+        "mp3": "assets/audio/sfx/enemies/sfx_boss_book_throw_01.mp3",
+        "wav": "assets/audio/sfx/enemies/sfx_boss_book_throw_01.wav"
+      }
+    },
+    {
+      "key": "sfx_question_block",
+      "title": "问号砖",
+      "bus": "sfx",
+      "category": "world",
+      "volume": 0.75,
+      "usage": "撞击问号砖并弹出奖励",
+      "files": {
+        "ogg": "assets/audio/sfx/world/sfx_question_block_01.ogg",
+        "mp3": "assets/audio/sfx/world/sfx_question_block_01.mp3",
+        "wav": "assets/audio/sfx/world/sfx_question_block_01.wav"
+      }
+    },
+    {
+      "key": "sfx_goal_flag",
+      "title": "终点旗",
+      "bus": "sfx",
+      "category": "world",
+      "volume": 0.8,
+      "usage": "到达终点旗",
+      "files": {
+        "ogg": "assets/audio/sfx/world/sfx_goal_flag_01.ogg",
+        "mp3": "assets/audio/sfx/world/sfx_goal_flag_01.mp3",
+        "wav": "assets/audio/sfx/world/sfx_goal_flag_01.wav"
+      }
+    },
+    {
+      "key": "sfx_ui_confirm",
+      "title": "菜单确认",
+      "bus": "ui",
+      "category": "ui",
+      "volume": 0.6,
+      "usage": "菜单确认、按钮点击",
+      "files": {
+        "ogg": "assets/audio/sfx/ui/sfx_ui_confirm_01.ogg",
+        "mp3": "assets/audio/sfx/ui/sfx_ui_confirm_01.mp3",
+        "wav": "assets/audio/sfx/ui/sfx_ui_confirm_01.wav"
+      }
+    }
+  ]
+}

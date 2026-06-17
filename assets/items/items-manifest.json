@@ -1,0 +1,94 @@
+{
+  "items": [
+    {
+      "id": "fireball_candy",
+      "name": "火球糖",
+      "type": "active_attack",
+      "uses": 5,
+      "effect": "发射小火球，打远处姐姐",
+      "image": "assets/items/png/fireball_candy.png",
+      "hudIcon": "assets/items/icons-128/fireball_candy.png"
+    },
+    {
+      "id": "toy_hammer",
+      "name": "玩具锤",
+      "type": "active_attack",
+      "uses": 8,
+      "effect": "近距离敲击姐姐或砖块",
+      "image": "assets/items/png/toy_hammer.png",
+      "hudIcon": "assets/items/icons-128/toy_hammer.png"
+    },
+    {
+      "id": "bouncy_shoes",
+      "name": "跳跳鞋",
+      "type": "temporary_ability",
+      "durationSeconds": 10,
+      "effect": "跳得更高，可以踩到飞行姐姐",
+      "image": "assets/items/png/bouncy_shoes.png",
+      "hudIcon": "assets/items/icons-128/bouncy_shoes.png"
+    },
+    {
+      "id": "star_cape",
+      "name": "星星披风",
+      "type": "temporary_ability",
+      "durationSeconds": 6,
+      "effect": "无敌冲刺，撞飞姐姐",
+      "image": "assets/items/png/star_cape.png",
+      "hudIcon": "assets/items/icons-128/star_cape.png"
+    },
+    {
+      "id": "bubble_shield",
+      "name": "泡泡盾",
+      "type": "defense",
+      "uses": 1,
+      "effect": "抵挡一次伤害",
+      "image": "assets/items/png/bubble_shield.png",
+      "hudIcon": "assets/items/icons-128/bubble_shield.png"
+    },
+    {
+      "id": "boomerang_toy",
+      "name": "回旋玩具",
+      "type": "active_attack",
+      "uses": 4,
+      "effect": "丢出去后飞回来",
+      "image": "assets/items/png/boomerang_toy.png",
+      "hudIcon": "assets/items/icons-128/boomerang_toy.png"
+    },
+    {
+      "id": "popcorn_bomb",
+      "name": "爆米花炸弹",
+      "type": "active_attack",
+      "uses": 3,
+      "effect": "小范围爆炸",
+      "image": "assets/items/png/popcorn_bomb.png",
+      "hudIcon": "assets/items/icons-128/popcorn_bomb.png"
+    },
+    {
+      "id": "flying_cap",
+      "name": "飞行帽",
+      "type": "temporary_ability",
+      "durationSeconds": 8,
+      "effect": "短暂滑翔",
+      "image": "assets/items/png/flying_cap.png",
+      "hudIcon": "assets/items/icons-128/flying_cap.png"
+    },
+    {
+      "id": "ice_cream_blaster",
+      "name": "冰淇淋枪",
+      "type": "active_control",
+      "uses": 5,
+      "effect": "冻住姐姐 2 秒",
+      "image": "assets/items/png/ice_cream_blaster.png",
+      "hudIcon": "assets/items/icons-128/ice_cream_blaster.png"
+    },
+    {
+      "id": "giant_cookie",
+      "name": "变大饼干",
+      "type": "temporary_ability",
+      "durationSeconds": 15,
+      "effect": "弟弟变大，可抗一次伤害",
+      "image": "assets/items/png/giant_cookie.png",
+      "hudIcon": "assets/items/icons-128/giant_cookie.png"
+    }
+  ]
+}
