@@ -3,6 +3,10 @@
 > 一款用爱制作的姐弟大战休闲动作小游戏。
 > A small action game made with love — siblings, snowballs, and a whole lot of chaos.
 
+![开始画面](promo/start-screen.png)
+
+![角色设定](promo/characters-preview.jpg)
+
 ---
 
 ## 中文
@@ -26,6 +30,18 @@ npm run dev
 ```
 然后在浏览器打开 [http://localhost:18473](http://localhost:18473) 即可开战。
 构建生产版本:`npm run build`,产物在 `dist/` 目录。
+
+### 关卡一览
+
+![关卡 1 设计图](promo/level1-map.png)
+
+![场景概念图](promo/concept-scene.png)
+
+### 完结画面
+
+| 胜利 | 失败 |
+| --- | --- |
+| ![Victory](promo/victory-screen.png) | ![Game Over](promo/game-over-screen.png) |
 
 ### 一起做
 这是一个**完全开放**的小项目,欢迎任何人贡献——不论你是设计师、程序员、音效师还是文案:
@@ -61,6 +77,16 @@ npm run dev
 ```
 Then open [http://localhost:18473](http://localhost:18473) in your browser.
 For a production build: `npm run build` (output in `dist/`).
+
+### Screenshots
+
+| Start | Victory | Game Over |
+| --- | --- | --- |
+| ![Start](promo/start-screen.png) | ![Victory](promo/victory-screen.png) | ![Game Over](promo/game-over-screen.png) |
+
+![Character sheet](promo/characters-preview.jpg)
+
+![Level 1 design](promo/level1-map.png)
 
 ### Contributing
 This is an **open, friendly, low-stakes** project. Pull requests of any size are welcome — bug fixes, new levels, new items, art, music, translations, and even typo fixes in this README. Open an issue first if you want to discuss a bigger idea.
