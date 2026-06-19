@@ -34,7 +34,8 @@ function makeLevel(index: number, overrides: Partial<LevelConfig>): LevelConfig 
     looseItems: [],
     coinArcs: [],
     checkpoint: { x: Math.round(worldWidth * 0.48), y: 650 },
-    goal: { x: worldWidth - 110, y: 700 }
+    goal: { x: worldWidth - 110, y: 700 },
+    targetTimeSec: 90,
   };
 
   return { ...base, ...overrides };
@@ -46,6 +47,8 @@ export const LEVELS: LevelConfig[] = [
     name: "家庭路线教学关",
     theme: "低台阶、沙发、桌面、阳台出口",
     backgroundKey: "concept_level_01_home_tutorial",
+    prologue: "放学啦！偷偷溜回家…等等,姐姐在客厅?",
+    epilogue: "顺利到阳台！下一关，去学校路上~",
     platforms: [
       { x: 2100, y: 830, width: 4200, height: 140, kind: "ground" },
       { x: 380, y: 722, width: 260, height: 36 },
@@ -75,7 +78,21 @@ export const LEVELS: LevelConfig[] = [
     ],
     looseItems: [{ id: "bubble_shield", x: 2440, y: 577 }],
     coinArcs: [coinArc(270, 705), coinArc(780, 660), coinArc(1620, 650), coinArc(2860, 665), coinArc(3650, 680)],
-    checkpoint: { x: 2050, y: 650 }
+    checkpoint: { x: 2050, y: 650 },
+    mechanics: [
+      { type: "interactive", x: 1280, y: 660, kind: "fridge" },
+      { type: "secret_entry", x: 1380, y: 650, condition: "hidden", id: "secret_1_memory" },
+      { type: "crisis_wave", xTrigger: 2900, durationMs: 15000, waves: 3, reward: { coins: 200, hp: 1 } },
+    ],
+    segments: [
+      { id: "A", xStart: 0, xEnd: 800, threatBase: 0, spawnBudget: 1, projectileBudget: 2 },
+      { id: "B", xStart: 800, xEnd: 1700, threatBase: 1, spawnBudget: 2, projectileBudget: 3 },
+      { id: "C", xStart: 1700, xEnd: 2600, threatBase: 2, spawnBudget: 3, projectileBudget: 4 },
+      { id: "D", xStart: 2600, xEnd: 3300, threatBase: 1, spawnBudget: 1, projectileBudget: 2 },
+      { id: "E", xStart: 3300, xEnd: 3900, threatBase: 3, spawnBudget: 3, projectileBudget: 5 },
+      { id: "F", xStart: 3900, xEnd: 9999, threatBase: 2, spawnBudget: 2, projectileBudget: 3 },
+    ],
+    targetTimeSec: 75,
   }),
 
   // L2 — wider gaps, mild vertical undulation
@@ -111,7 +128,20 @@ export const LEVELS: LevelConfig[] = [
     ],
     coinArcs: [coinArc(300, 700), coinArc(980, 645), coinArc(1950, 675), coinArc(2850, 660), coinArc(3700, 680)],
     checkpoint: { x: 2200, y: 650 },
-    goal: { x: 4300, y: 700 }
+    goal: { x: 4300, y: 700 },
+    prologue: "上学路上要小心,姐姐在后面追呢！",
+    epilogue: "差点被抓到…还好斑马线绿灯了！",
+    mechanics: [
+      { type: "moving_platform", x: 1900, y: 670, width: 140, height: 32, range: [1700, 2200], speed: 80 },
+      { type: "moving_platform", x: 3100, y: 640, width: 140, height: 32, range: [2950, 3400], speed: 90 },
+    ],
+    segments: [
+      { id: "A", xStart: 0, xEnd: 1100, threatBase: 0, spawnBudget: 1, projectileBudget: 2 },
+      { id: "B", xStart: 1100, xEnd: 2200, threatBase: 1, spawnBudget: 2, projectileBudget: 3 },
+      { id: "C", xStart: 2200, xEnd: 3300, threatBase: 2, spawnBudget: 3, projectileBudget: 4 },
+      { id: "D", xStart: 3300, xEnd: 4300, threatBase: 2, spawnBudget: 2, projectileBudget: 3 },
+    ],
+    targetTimeSec: 80,
   }),
 
   // L3 — narrow pads, long run-jump spacing (moving-bus-stop rhythm)
@@ -151,7 +181,21 @@ export const LEVELS: LevelConfig[] = [
     ],
     coinArcs: [coinArc(270, 705), coinArc(880, 625), coinArc(1700, 615), coinArc(2580, 690), coinArc(3550, 630)],
     checkpoint: { x: 2250, y: 650 },
-    goal: { x: 4400, y: 700 }
+    goal: { x: 4400, y: 700 },
+    prologue: "耳机姐姐的音乐好吵…但是躲过音波就能过！",
+    epilogue: "啊,公交站到了！快跑！",
+    mechanics: [
+      { type: "wave_indicator", x: 1150, y: 580, warningMs: 1500, range: 120 },
+      { type: "wave_indicator", x: 2000, y: 580, warningMs: 1400, range: 120 },
+      { type: "wave_indicator", x: 2880, y: 580, warningMs: 1300, range: 120 },
+    ],
+    segments: [
+      { id: "A", xStart: 0, xEnd: 1100, threatBase: 1, spawnBudget: 2, projectileBudget: 3 },
+      { id: "B", xStart: 1100, xEnd: 2400, threatBase: 2, spawnBudget: 3, projectileBudget: 4 },
+      { id: "C", xStart: 2400, xEnd: 3500, threatBase: 2, spawnBudget: 2, projectileBudget: 4 },
+      { id: "D", xStart: 3500, xEnd: 4500, threatBase: 3, spawnBudget: 3, projectileBudget: 5 },
+    ],
+    targetTimeSec: 85,
   }),
 
   // L4 — bounce pads, high arcs between cushions
@@ -190,7 +234,20 @@ export const LEVELS: LevelConfig[] = [
       { x: 3300, y: questionBlockY(620) }
     ],
     looseItems: [{ id: "bouncy_shoes", x: 1500, y: 562 }],
-    coinArcs: [coinArc(270, 705), coinArc(980, 555), coinArc(1500, 585), coinArc(2700, 565), coinArc(3600, 675)]
+    coinArcs: [coinArc(270, 705), coinArc(980, 555), coinArc(1500, 585), coinArc(2700, 565), coinArc(3600, 675)],
+    prologue: "沙发好软！跳！再跳！",
+    epilogue: "客厅跳完了,下一关是哪里?",
+    mechanics: [
+      { type: "interactive", x: 1500, y: 580, kind: "toybox" },
+      { type: "interactive", x: 2700, y: 560, kind: "tv" },
+    ],
+    segments: [
+      { id: "A", xStart: 0, xEnd: 1100, threatBase: 0, spawnBudget: 1, projectileBudget: 2 },
+      { id: "B", xStart: 1100, xEnd: 2400, threatBase: 1, spawnBudget: 2, projectileBudget: 3 },
+      { id: "C", xStart: 2400, xEnd: 3300, threatBase: 2, spawnBudget: 3, projectileBudget: 4 },
+      { id: "D", xStart: 3300, xEnd: 4200, threatBase: 2, spawnBudget: 2, projectileBudget: 4 },
+    ],
+    targetTimeSec: 80,
   }),
 
   // L5 — vertical stacks, short pads, tight timing
@@ -235,7 +292,19 @@ export const LEVELS: LevelConfig[] = [
       { x: 2040, y: questionBlockY(580) },
       { x: 2860, y: questionBlockY(560) }
     ],
-    coinArcs: [coinArc(270, 705), coinArc(720, 585), coinArc(1360, 525), coinArc(2420, 685), coinArc(3540, 685)]
+    coinArcs: [coinArc(270, 705), coinArc(720, 585), coinArc(1360, 525), coinArc(2420, 685), coinArc(3540, 685)],
+    prologue: "教室…作业…姐姐来了！",
+    epilogue: "作业本太多啦！下次不要打瞌睡！",
+    mechanics: [
+      { type: "homework_rain", xStart: 1100, xEnd: 3800, y: 200, intervalMs: 2500, count: 4 },
+    ],
+    segments: [
+      { id: "A", xStart: 0, xEnd: 1200, threatBase: 1, spawnBudget: 2, projectileBudget: 3 },
+      { id: "B", xStart: 1200, xEnd: 2400, threatBase: 3, spawnBudget: 4, projectileBudget: 6 },
+      { id: "C", xStart: 2400, xEnd: 3600, threatBase: 3, spawnBudget: 4, projectileBudget: 6 },
+      { id: "D", xStart: 3600, xEnd: 4200, threatBase: 2, spawnBudget: 2, projectileBudget: 4 },
+    ],
+    targetTimeSec: 95,
   }),
 
   // L6 — mixed bounce pads + long horizontal gaps
@@ -275,7 +344,18 @@ export const LEVELS: LevelConfig[] = [
     looseItems: [{ id: "star_cape", x: 2050, y: 572 }],
     coinArcs: [coinArc(290, 705), coinArc(1000, 675), coinArc(1700, 665), coinArc(2850, 615), coinArc(3600, 605)],
     checkpoint: { x: 2200, y: 650 },
-    goal: { x: 4300, y: 700 }
+    goal: { x: 4300, y: 700 },
+    prologue: "小区花园好好玩！但是姐姐在后面追！",
+    epilogue: "差点被抓！滑梯好快！",
+    mechanics: [
+      { type: "interactive", x: 700, y: 620, kind: "lamp" },
+    ],
+    segments: [
+      { id: "A", xStart: 0, xEnd: 1300, threatBase: 1, spawnBudget: 2, projectileBudget: 3 },
+      { id: "B", xStart: 1300, xEnd: 2700, threatBase: 2, spawnBudget: 3, projectileBudget: 4 },
+      { id: "C", xStart: 2700, xEnd: 4400, threatBase: 3, spawnBudget: 3, projectileBudget: 5 },
+    ],
+    targetTimeSec: 90,
   }),
 
   // L7 — ice slides + gap landings
@@ -319,7 +399,20 @@ export const LEVELS: LevelConfig[] = [
     looseItems: [{ id: "ice_cream_blaster", x: 1950, y: 597 }],
     coinArcs: [coinArc(290, 705), coinArc(960, 685), coinArc(1600, 685), coinArc(2600, 625), coinArc(3600, 670)],
     checkpoint: { x: 2200, y: 650 },
-    goal: { x: 4300, y: 700 }
+    goal: { x: 4300, y: 700 },
+    prologue: "冰面好滑！小心别冲过头！",
+    epilogue: "冻住姐姐！冰淇淋枪真管用！",
+    mechanics: [
+      { type: "ice_zone", x: 1600, y: 720, width: 240, height: 80, friction: 0.4 },
+      { type: "ice_zone", x: 2600, y: 660, width: 180, height: 80, friction: 0.4 },
+    ],
+    segments: [
+      { id: "A", xStart: 0, xEnd: 1200, threatBase: 1, spawnBudget: 2, projectileBudget: 3 },
+      { id: "B", xStart: 1200, xEnd: 2400, threatBase: 2, spawnBudget: 3, projectileBudget: 4 },
+      { id: "C", xStart: 2400, xEnd: 3500, threatBase: 2, spawnBudget: 2, projectileBudget: 4 },
+      { id: "D", xStart: 3500, xEnd: 4400, threatBase: 3, spawnBudget: 3, projectileBudget: 5 },
+    ],
+    targetTimeSec: 85,
   }),
 
   // L8 — bubble bounce towers, vertical climbs
@@ -367,7 +460,19 @@ export const LEVELS: LevelConfig[] = [
     looseItems: [{ id: "bubble_shield", x: 1420, y: 582 }, { id: "flying_cap", x: 2680, y: 602 }],
     coinArcs: [coinArc(270, 705), coinArc(820, 565), coinArc(1420, 605), coinArc(2420, 565), coinArc(3480, 665)],
     checkpoint: { x: 2150, y: 650 },
-    goal: { x: 4200, y: 700 }
+    goal: { x: 4200, y: 700 },
+    prologue: "泡泡好软！别踩破！",
+    epilogue: "浴室泡泡世界,下次再玩！",
+    mechanics: [
+      { type: "moving_platform", x: 1300, y: 580, width: 120, height: 28, range: [1100, 1600], speed: 60 },
+    ],
+    segments: [
+      { id: "A", xStart: 0, xEnd: 1200, threatBase: 1, spawnBudget: 2, projectileBudget: 3 },
+      { id: "B", xStart: 1200, xEnd: 2400, threatBase: 2, spawnBudget: 3, projectileBudget: 4 },
+      { id: "C", xStart: 2400, xEnd: 3600, threatBase: 2, spawnBudget: 3, projectileBudget: 5 },
+      { id: "D", xStart: 3600, xEnd: 4200, threatBase: 2, spawnBudget: 2, projectileBudget: 3 },
+    ],
+    targetTimeSec: 85,
   }),
 
   // L9 — low gravity, floaty long jumps
@@ -412,7 +517,18 @@ export const LEVELS: LevelConfig[] = [
     looseItems: [{ id: "flying_cap", x: 2060, y: 622 }, { id: "star_cape", x: 3660, y: 582 }],
     coinArcs: [coinArc(270, 705), coinArc(980, 605), coinArc(1680, 595), coinArc(2860, 645), coinArc(4060, 555)],
     checkpoint: { x: 2400, y: 650 },
-    goal: { x: 4700, y: 700 }
+    goal: { x: 4700, y: 700 },
+    prologue: "梦境星空…漂浮的月亮姐姐好漂亮！",
+    epilogue: "梦里赢了一次,但醒来还要继续…",
+    mechanics: [
+      { type: "low_gravity_zone", x: 600, y: 500, width: 3800, height: 400, gravityMul: 0.55 },
+    ],
+    segments: [
+      { id: "A", xStart: 0, xEnd: 1500, threatBase: 1, spawnBudget: 2, projectileBudget: 3 },
+      { id: "B", xStart: 1500, xEnd: 3000, threatBase: 2, spawnBudget: 3, projectileBudget: 4 },
+      { id: "C", xStart: 3000, xEnd: 4800, threatBase: 3, spawnBudget: 4, projectileBudget: 5 },
+    ],
+    targetTimeSec: 90,
   }),
 
   // L10 — boss runway, hardest gap combo (still within jump -560)
@@ -461,6 +577,21 @@ export const LEVELS: LevelConfig[] = [
     ],
     coinArcs: [coinArc(290, 705), coinArc(1150, 595), coinArc(2120, 555), coinArc(3100, 655), coinArc(4080, 620)],
     checkpoint: { x: 2500, y: 650 },
-    goal: { x: 4500, y: 700 }
+    goal: { x: 4500, y: 700 },
+    prologue: "最终幻想房间…姐姐的最强形态！冲！",
+    epilogue: "姐姐服气了！我们一起去吃冰淇淋吧~",
+    mechanics: [
+      { type: "low_gravity_zone", x: 2400, y: 600, width: 800, height: 400, gravityMul: 0.6 },
+      { type: "moving_platform", x: 3300, y: 580, width: 120, height: 28, range: [3100, 3500], speed: 90 },
+      { type: "homework_rain", xStart: 1500, xEnd: 4000, y: 200, intervalMs: 3000, count: 3 },
+      { type: "crisis_wave", xTrigger: 2000, durationMs: 15000, waves: 3, reward: { coins: 300, hp: 1 } },
+    ],
+    segments: [
+      { id: "A", xStart: 0, xEnd: 1400, threatBase: 2, spawnBudget: 3, projectileBudget: 4 },
+      { id: "B", xStart: 1400, xEnd: 2400, threatBase: 3, spawnBudget: 4, projectileBudget: 6 },
+      { id: "C", xStart: 2400, xEnd: 3600, threatBase: 4, spawnBudget: 4, projectileBudget: 6 },
+      { id: "D", xStart: 3600, xEnd: 4600, threatBase: 4, spawnBudget: 4, projectileBudget: 7 },
+    ],
+    targetTimeSec: 110,
   })
 ];

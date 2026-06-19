@@ -3,6 +3,12 @@
 > 一款用爱制作的姐弟大战休闲动作小游戏。
 > A small action game made with love — siblings, snowballs, and a whole lot of chaos.
 
+## 🎮 在线试玩 · Play Online
+
+**👉 [https://opc007.github.io/didifanji-game/](https://opc007.github.io/didifanji-game/)**
+
+打开链接即可玩，无需安装。Push 到 `main` 分支后会自动更新。
+
 ![开始画面](promo/start-screen.png)
 
 ![角色设定](promo/characters-preview.jpg)
@@ -30,6 +36,8 @@ npm run dev
 ```
 然后在浏览器打开 [http://localhost:18473](http://localhost:18473) 即可开战。
 构建生产版本:`npm run build`,产物在 `dist/` 目录。
+
+在线版地址（自动部署）:[https://opc007.github.io/didifanji-game/](https://opc007.github.io/didifanji-game/)
 
 ### 关卡一览
 
@@ -77,6 +85,8 @@ npm run dev
 ```
 Then open [http://localhost:18473](http://localhost:18473) in your browser.
 For a production build: `npm run build` (output in `dist/`).
+
+**Play online:** [https://opc007.github.io/didifanji-game/](https://opc007.github.io/didifanji-game/) (auto-deployed on push to `main`).
 
 ### Screenshots
 

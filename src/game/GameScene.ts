@@ -1,9 +1,21 @@
 import Phaser from "phaser";
 import { LEVELS } from "./levelData";
 import type { ActiveItem, EnemyKind, EnemySpawn, ItemConfig, LevelConfig, RectSpec } from "./types";
+import { MovementController, InputState as MoveInput } from "./MovementController";
+import { JuiceDirector } from "./JuiceDirector";
+import { ComboSystem } from "./ComboSystem";
+import { ThreatEscalation } from "./ThreatEscalation";
+import { SisterEmotion, EMOTION_TABLE, SISTER_DIALOG } from "./SisterEmotion";
+import { DialogBubble } from "./DialogBubble";
+import { findRecipe, CraftingPrompt } from "./CraftingSystem";
+import { MechanicController } from "./MechanicController";
+import { SaveManager } from "./SaveManager";
+import { BROTHER_MONOLOGUES } from "./DialogPools";
+import { pickHeartfelt } from "./DialogPools";
 
 type PlayerState = {
   hp: number;
+  maxHp?: number;
   coins: number;
   defeatedEnemies: number;
   checkpoint: Phaser.Math.Vector2;
@@ -16,6 +28,10 @@ type PlayerState = {
   giantUntil: number;
   facing: 1 | -1;
   locked: boolean;
+  /** Wave 0.4：本次关卡是否哭过 */
+  criedThisLevel?: boolean;
+  /** Wave 0.5：关卡开始时刻（用于 elapsedSec） */
+  levelStartAt?: number;
 };
 
 type CharacterVisual = {
@@ -49,7 +65,7 @@ type EnemyThrowProfile = {
   balloonDrop?: boolean;
 };
 
-const PLAYER_SPEED = 255;
+const PLAYER_SPEED = 380;
 const JUMP_VELOCITY = -560;
 const COYOTE_MS = 120;
 const JUMP_BUFFER_MS = 120;
@@ -111,6 +127,10 @@ export class GameScene extends Phaser.Scene {
     itemIcon: Phaser.GameObjects.Image;
     level: Phaser.GameObjects.Text;
     hint: Phaser.GameObjects.Text;
+    tauntLabel: Phaser.GameObjects.Text;
+    yellLabel: Phaser.GameObjects.Text;
+    tauntBar: Phaser.GameObjects.Rectangle;
+    yellBar: Phaser.GameObjects.Rectangle;
   };
   private touchMove = 0;
   private touchJump = false;
@@ -128,6 +148,50 @@ export class GameScene extends Phaser.Scene {
   private bubbleShieldVisual?: Phaser.GameObjects.Arc;
   private questionHintActive = false;
 
+  // ─── Wave 0 新模块 ─────────────────────────────────
+  private movement = new MovementController();
+  private juice = new JuiceDirector(this);
+  private combo = new ComboSystem(this);
+  private threat = new ThreatEscalation();
+  /** Feature flags（保留可关可调） */
+  private flags = {
+    movementOverhaul: true,
+    threatEscalation: true,
+    comboSystem: true,
+    juiceDirector: true,
+    sisterEmotion: true,
+    itemCrafting: true,
+    secretEntries: true,
+    bossPhases: true,
+    brotherMonologue: true,
+    mechanics: true,
+  };
+  /** Wave 1.1: 姐姐情绪实例，挂在 enemy.setData('emotion', SisterEmotion) */
+  /** Wave 0.8: 关卡机关 controller */
+  private mechanics = new MechanicController(this);
+  /** Wave 1.1: 通用对话气泡 */
+  private dialog = new DialogBubble(this);
+  /** Wave 1.2: 当前合成提示句柄 */
+  private craftPromptHandle?: { destroy: () => void };
+  /** Wave 1.4: SaveManager 单例 */
+  private save = SaveManager.load();
+  /** Wave 1.5: Boss 阶段 */
+  private bossPhase: 1 | 2 | 3 = 1;
+  private bossTelegraphUntil = 0;
+  private bossTelegraphText?: Phaser.GameObjects.Text;
+  /** Wave 2.3: 弟弟独白冷却时间戳 */
+  private monologueNextAllowedAt = 0;
+  /** Wave 2.4: 关卡入场 prologue 文字 */
+  private prologueText?: Phaser.GameObjects.Text;
+  /** Wave 0.8: 是否已触发危机波 */
+  private crisisTriggered = false;
+  /** Wave 1.3: 反击技能冷却 */
+  private abilityCooldowns = { taunt: 0, yell: 0 };
+  /** Wave 2.1: 当前关卡可进入的 secret id */
+  private availableSecretId: string | null = null;
+  /** Wave 2.7: 反制策略倍率 */
+  private counterMeasures = { enemySpeedMul: 1, projectileCooldownMul: 1, enemyShieldMul: 1, invisibleRail: false, extraHeadphone: 0, itemDropMul: 1 };
+
   constructor() {
     super("GameScene");
   }
@@ -137,7 +201,34 @@ export class GameScene extends Phaser.Scene {
     this.level = LEVELS[this.levelIndex];
   }
 
+  /**
+   * 注：Wave 0 模块（movement / juice / combo / threat）在声明时已 new，
+   * 但 JuiceDirector / ComboSystem 需要绑定 scene。create() 中再调用 reset / 初始化。
+   * 这里在 create() 顶部集中初始化。
+   */
+
   create() {
+    // ─── Wave 0 模块重置 ─────────────────────────────
+    this.movement.reset();
+    this.combo.reset();
+    this.threat.reset();
+    this.juice.clearEdgeTint();
+
+    // ─── Wave 2.7: 加载反制策略 + Wave 2.5: 加载难度 ──
+    import("./AdaptiveAI").then(({ getCounterMeasures }) => {
+      this.counterMeasures = getCounterMeasures();
+    });
+    import("./SettingsScene").then(({ PRESETS }) => {
+      const preset = PRESETS[this.save.settings.difficulty] ?? PRESETS.standard;
+      this.state.hp = preset.playerMaxHp;
+      this.state.maxHp = preset.playerMaxHp;
+    });
+    // ─── Wave 2.1: 加载 secret 入口配置 ───────────────
+    import("./SecretScene").then(({ SECRET_CONFIGS }) => {
+      const found = SECRET_CONFIGS.find((s) => s.parentLevel === this.levelIndex);
+      this.availableSecretId = found?.id ?? null;
+    });
+
     this.sound.stopAll();
     this.sound.play(this.level.enemies.some((enemy) => enemy.kind === "sister_boss") ? "bgm_fight_loop" : "bgm_gameplay_loop", {
       loop: true,
@@ -177,15 +268,184 @@ export class GameScene extends Phaser.Scene {
     this.createTouchControls();
     this.registerPhysics();
     this.questionHintActive = this.levelIndex === 0 && this.level.questionBlocks.length > 0;
+    this.state.levelStartAt = this.time.now;
+    this.state.criedThisLevel = false;
+    // ─── Wave 0.8: 构建关卡机关 ────────────────────────
+    if (this.flags.mechanics) {
+      this.mechanics.bindPlayer(this.player, this.enemyProjectiles);
+      this.mechanics.buildAll(this.level.mechanics);
+    }
+    this.events.on("crisis_wave_start", () => {
+      if (this.crisisTriggered) return;
+      this.crisisTriggered = true;
+      this.showToast("⚠ 危机波！打败所有姐姐！", 2000);
+      this.juice.setEdgeTint(0xff2244, 0.1);
+    });
+    this.monologueNextAllowedAt = this.time.now + 4000;
     this.showToast(`${this.level.name} · ${this.level.theme}`, 2600);
+
+    // Wave 2.4: 入场小剧场 prologue
+    if (this.level.prologue) {
+      this.prologueText = this.add.text(this.cameras.main.centerX, this.cameras.main.centerY - 80, this.level.prologue, {
+        fontFamily: '"Microsoft YaHei", sans-serif',
+        fontSize: "22px",
+        fontStyle: "bold",
+        color: "#fff3bd",
+        stroke: "#172137",
+        strokeThickness: 5,
+        align: "center",
+        wordWrap: { width: 700 },
+      }).setOrigin(0.5).setScrollFactor(0).setDepth(1100);
+      this.tweens.add({
+        targets: this.prologueText,
+        alpha: 0,
+        y: this.prologueText.y - 30,
+        delay: 3200,
+        duration: 900,
+        onComplete: () => this.prologueText?.destroy(),
+      });
+    }
+
+    // ─── 自检模式：?selftest=1 ──────────────────────────
+    if (typeof window !== "undefined") {
+      const isTest = new URLSearchParams(window.location.search).get("selftest") === "1";
+      console.log("[SELFTEST] GameScene.create() reached. isTest=" + isTest);
+      if (isTest) {
+        // 立即把状态写到 window，让测试脚本能早期读到
+        (window as unknown as { __selftest_started?: boolean }).__selftest_started = true;
+        // 异步跑（不阻塞 create）
+        this.runSelfTest();
+      }
+    }
+  }
+
+  private async runSelfTest() {
+    const log: string[] = [];
+    const errs: string[] = [];
+    const report = (stage: string, extra?: unknown) => {
+      console.log("[SELFTEST]", stage, extra !== undefined ? JSON.stringify(extra) : '');
+    };
+    const safe = (label: string, fn: () => void) => {
+      try { fn(); log.push('✓ ' + label); report('OK ' + label); }
+      catch (e) {
+        const msg = `✗ ${label}: ${(e as Error).message}`;
+        errs.push(msg);
+        report('FAIL ' + label, (e as Error).message);
+      }
+    };
+    report('start');
+    // 等 200ms 让 prologue 显示完
+    await new Promise(r => setTimeout(r, 250));
+
+    safe('create() ran', () => { if (!this.player) throw new Error('player not created'); });
+    safe('level loaded', () => { if (!this.level) throw new Error('level missing'); });
+    safe('enemies spawned', () => { if (this.enemies.children.entries.length === 0) throw new Error('no enemies'); });
+    safe('HUD built', () => { if (!this.hud.hearts) throw new Error('hud missing'); });
+    safe('movement ok', () => {
+      const body = this.player.body as Phaser.Physics.Arcade.Body;
+      const beforeVx = body.velocity.x;
+      // MovementController.update 只设置 body.velocity，不直接改 position
+      // 所以检查 velocity 是否被正确写入
+      this.movement.update(500, this.time.now, body, 1, {
+        left: false, right: true, jumpDown: false, jumpHeld: false, stompDown: false, stompHeld: false, useDown: false,
+      }, { starUntil: 0, giantUntil: 0 });
+      if (body.velocity.x <= beforeVx + 10) throw new Error('movement velocity not applied (vx=' + body.velocity.x + ' from ' + beforeVx + ')');
+    });
+    safe('combo system', () => {
+      this.combo.registerHit();
+      if (this.combo.getCount() < 1) throw new Error('combo broken');
+    });
+    safe('emotion attached', () => {
+      const e = this.enemies.children.entries[0] as Phaser.Physics.Arcade.Image;
+      const emo = e?.getData('emotion');
+      if (!emo) throw new Error('emotion missing');
+    });
+    safe('save manager', () => {
+      import('./SaveManager').then(({ SaveManager }) => {
+        const s = SaveManager.load();
+        if (!s || typeof s.coins !== 'number') throw new Error('save broken');
+      });
+    });
+    safe('mechanics attached', () => {
+      const sec = this.level.mechanics?.length ?? 0;
+      if (sec === 0 && this.levelIndex === 0) console.warn('no mechanics on L1 (ok)');
+    });
+
+    // 模拟 60 帧：每帧让玩家向右走 + 随机跳
+    let frames = 60;
+    let caughtRuntime = '';
+    const origUpdate = this.update.bind(this);
+    this.update = ((time: number, delta: number) => {
+      try {
+        // 注入假的输入方向
+        (this as unknown as { state: { facing: 1 | -1 } }).state.facing = 1;
+        // 模拟按右
+        (this.keys as unknown as Record<string, { isDown: boolean }>)['d'].isDown = true;
+        if (frames % 18 === 0) {
+          // 模拟跳跃边沿
+          (this.keys as unknown as Record<string, { isDown: boolean; _just?: boolean }>)['space'].isDown = true;
+          (this.keys as unknown as Record<string, { _just?: boolean }>)['space']._just = true;
+        } else {
+          (this.keys as unknown as Record<string, { isDown: boolean }>)['space'].isDown = false;
+        }
+        origUpdate(time, 16);
+      } catch (e) {
+        caughtRuntime = (e as Error).message + '\n' + (e as Error).stack?.split('\n').slice(0,3).join('\n');
+      }
+      frames--;
+    }) as typeof this.update;
+
+    const startX = this.player.x;
+    for (let i = 0; i < 60; i++) {
+      this.update(this.time.now + i * 16, 16);
+      if (caughtRuntime) break;
+      await new Promise(r => setTimeout(r, 0));
+    }
+
+    safe('60 frames survived', () => { if (caughtRuntime) throw new Error(caughtRuntime); });
+    safe('player moved > 50px in 60 frames', () => {
+      const moved = this.player.x - startX;
+      if (moved < 50) throw new Error('player did not move (moved ' + moved + 'px from ' + startX + ' to ' + this.player.x + ')');
+    });
+    safe('useCurrentItem path (no item ok)', () => {
+      this.state.activeItem = undefined;
+      this.useCurrentItem(); // 应该只显示 toast，不 crash
+    });
+    safe('castTaunt + castYell', () => {
+      this.castTaunt();
+      this.castYell();
+    });
+
+    // 输出到 console + 屏幕 + localStorage
+    const finalReport = { log, errs, playerX: this.player.x, hp: this.state.hp, coins: this.state.coins, frameTested: 60 - frames };
+    console.log('[SELFTEST]', JSON.stringify(finalReport, null, 2));
+    (window as unknown as { __selftest?: unknown }).__selftest = finalReport;
+    try { localStorage.setItem('selftest_result', JSON.stringify(finalReport)); } catch {}
+    report('done', { log: log.length, errs: errs.length });
+
+    // 在屏幕上画一个 HUD
+    const text = this.add.text(20, 180, 'SELFTEST ' + (errs.length === 0 ? '✓ PASS' : '✗ FAIL'), {
+      fontFamily: '"Microsoft YaHei", sans-serif',
+      fontSize: '20px',
+      fontStyle: 'bold',
+      color: errs.length === 0 ? '#a4f0ff' : '#ff8e8e',
+      backgroundColor: '#1a2740',
+      padding: { x: 12, y: 8 },
+    }).setScrollFactor(0).setDepth(2000);
+    void text;
   }
 
   update(time: number, delta: number) {
-    if (!this.player?.body || this.state.locked) return;
+    if (!this.player?.body) return;
 
-    this.updatePlayer(time);
+    // ─── Wave 0.3：ComboSystem 倒计时（locked 时也跑，连击不冻结）──
+    if (this.flags.comboSystem) this.combo.tick(delta);
+
+    if (this.state.locked) return;
+
+    this.updatePlayer(time, delta);
     this.updateCoinMagnet();
-    this.updateEnemies(time);
+    this.updateEnemies(time, delta);
     this.resolvePlayerEnemyVisualOverlap();
     this.updateProjectiles();
     this.updateTimedItems(delta, time);
@@ -195,6 +455,8 @@ export class GameScene extends Phaser.Scene {
     this.updateQuestionBlockHits();
     this.updateQuestionHint();
     this.updateHud(time);
+    // ─── Wave 0.8: 机关 tick ──────────────────────────
+    if (this.flags.mechanics) this.mechanics.update(delta);
     this.storeBodyPreviousPositions();
   }
 
@@ -560,8 +822,8 @@ export class GameScene extends Phaser.Scene {
     this.playerBaseScaleY = this.player.scaleY;
     this.player.setCollideWorldBounds(true);
     this.player.setDepth(10);
-    this.player.setDragX(1300);
-    this.player.setMaxVelocity(520, 950);
+    this.player.setDragX(2200);
+    this.player.setMaxVelocity(620, 950);
     this.setFeetAlignedBodyBox(
       this.player,
       this.scaleBodyBox(CHAR_BODY.player, CHAR_DISPLAY_REF.player, { w, h })
@@ -673,12 +935,16 @@ export class GameScene extends Phaser.Scene {
       s: Phaser.Input.Keyboard.KeyCodes.S,
       j: Phaser.Input.Keyboard.KeyCodes.J,
       space: Phaser.Input.Keyboard.KeyCodes.SPACE,
-      esc: Phaser.Input.Keyboard.KeyCodes.ESC
-    }) as Record<"a" | "d" | "s" | "j" | "space" | "esc", Phaser.Input.Keyboard.Key>;
+      esc: Phaser.Input.Keyboard.KeyCodes.ESC,
+      t: Phaser.Input.Keyboard.KeyCodes.T,
+      y: Phaser.Input.Keyboard.KeyCodes.Y,
+    }) as unknown as Record<"a" | "d" | "s" | "j" | "space" | "esc" | "t" | "y", Phaser.Input.Keyboard.Key>;
 
     this.keys.esc.on("down", () => {
       this.scene.start("StartScene");
     });
+    (this.keys as unknown as Record<"t" | "y", Phaser.Input.Keyboard.Key>).t.on("down", () => this.castTaunt());
+    (this.keys as unknown as Record<"t" | "y", Phaser.Input.Keyboard.Key>).y.on("down", () => this.castYell());
   }
 
   private createHud() {
@@ -690,7 +956,11 @@ export class GameScene extends Phaser.Scene {
       level: this.add.text(320, 18, "", this.hudStyle(18, "#ffffff")).setScrollFactor(0).setDepth(1001),
       itemIcon: this.add.image(742, 34, "hud:fireball_candy").setScrollFactor(0).setDepth(1001).setVisible(false).setDisplaySize(42, 42),
       itemText: this.add.text(772, 18, "无道具", this.hudStyle(18, "#eaf6ff")).setScrollFactor(0).setDepth(1001),
-      hint: this.add.text(480, 82, "", this.hudStyle(18, "#fff3bd")).setOrigin(0.5).setScrollFactor(0).setDepth(1001).setAlpha(0)
+      hint: this.add.text(480, 82, "", this.hudStyle(18, "#fff3bd")).setOrigin(0.5).setScrollFactor(0).setDepth(1001).setAlpha(0),
+      tauntLabel: this.add.text(150, 70, "T 挑衅", this.hudStyle(14, "#ffb3c1")).setScrollFactor(0).setDepth(1001).setOrigin(0.5),
+      tauntBar: this.add.rectangle(150, 84, 96, 6, 0xffb3c1, 0.4).setScrollFactor(0).setDepth(1001),
+      yellLabel: this.add.text(280, 70, "Y 大叫", this.hudStyle(14, "#a4f0ff")).setScrollFactor(0).setDepth(1001).setOrigin(0.5),
+      yellBar: this.add.rectangle(280, 84, 96, 6, 0xa4f0ff, 0.4).setScrollFactor(0).setDepth(1001),
     };
     this.updateHud(this.time.now);
   }
@@ -805,6 +1075,10 @@ export class GameScene extends Phaser.Scene {
     );
     enemy.setData("baseScaleX", enemy.scaleX);
     enemy.setData("baseScaleY", enemy.scaleY);
+    // Wave 1.1: 情绪实例
+    if (this.flags.sisterEmotion) {
+      enemy.setData("emotion", new SisterEmotion(`${spawn.kind}_${spawn.x}_${this.levelIndex}`));
+    }
   }
 
   private findEnemyLane(spawn: EnemySpawn, isBoss: boolean): EnemyLane {
@@ -891,7 +1165,7 @@ export class GameScene extends Phaser.Scene {
     };
   }
 
-  private updatePlayer(time: number) {
+  private updatePlayer(time: number, delta: number) {
     const body = this.player.body as Phaser.Physics.Arcade.Body;
     if (
       this.player.y > this.level.worldHeight + 40 ||
@@ -907,52 +1181,116 @@ export class GameScene extends Phaser.Scene {
     const left = this.cursors.left?.isDown || this.keys.a.isDown || this.touchMove < 0;
     const right = this.cursors.right?.isDown || this.keys.d.isDown || this.touchMove > 0;
     const jumpKeyPressed = Phaser.Input.Keyboard.JustDown(this.keys.space) || Phaser.Input.Keyboard.JustDown(this.cursors.up!);
+    const jumpHeld = this.cursors.up?.isDown || this.keys.space.isDown || this.touchJump;
     const touchJumpJustPressed = this.touchJump && !this.prevTouchJump;
     this.prevTouchJump = this.touchJump;
     const usePressed = Phaser.Input.Keyboard.JustDown(this.keys.j) || this.touchUse;
     const grounded = body.blocked.down || body.touching.down;
-    const speedBoost = time < this.state.starUntil ? 1.45 : 1;
-    const speed = PLAYER_SPEED * speedBoost * (time < this.state.giantUntil ? 0.9 : 1);
 
-    if (grounded) {
-      this.lastGroundedAt = time;
+    // ─── Wave 0.4：ThreatEscalation ────────────────────
+    if (this.flags.threatEscalation && this.state.levelStartAt) {
+      const elapsedSec = (time - this.state.levelStartAt) / 1000;
+      this.threat.tick(delta, {
+        combo: this.combo.getCount(),
+        playerHp: this.state.hp,
+        inBossZone: this.level.enemies.some((e) => e.kind === "sister_boss") && this.player.x > (this.level.worldWidth * 0.75),
+        elapsedSec,
+      });
+      const m = this.threat.getModifiers();
+      if (m.edgeTintAlpha > 0) this.juice.setEdgeTint(0xff2244, m.edgeTintAlpha);
+      else this.juice.clearEdgeTint();
     }
 
-    if (jumpKeyPressed || touchJumpJustPressed) {
-      this.jumpBufferUntil = time + JUMP_BUFFER_MS;
-    }
+    if (this.flags.movementOverhaul) {
+      // ─── 新手感 ─────────────────────────────────────
+      const input: MoveInput = {
+        left,
+        right,
+        jumpDown: jumpKeyPressed || touchJumpJustPressed,
+        jumpHeld,
+        stompDown: Phaser.Input.Keyboard.JustDown(this.keys.s) || Phaser.Input.Keyboard.JustDown(this.cursors.down!),
+        stompHeld: this.keys.s.isDown || this.cursors.down?.isDown === true,
+        useDown: usePressed,
+      };
+      // 有水平输入时禁用 drag，让 MovementController 全权控制
+      if (left || right) {
+        body.setDragX(0);
+      } else {
+        body.setDragX(this.movement.getConfig().groundDecel);
+      }
+      // 把 flyingUntil 同步给 movement（飞行帽）
+      if (time < this.state.flyingUntil) this.movement.setFlying(this.state.flyingUntil);
 
-    if (left) {
-      body.setDragX(0);
-      body.setVelocityX(-speed);
-      this.state.facing = -1;
-      this.player.setFlipX(true);
-    } else if (right) {
-      body.setDragX(0);
-      body.setVelocityX(speed);
-      this.state.facing = 1;
-      this.player.setFlipX(false);
+      const result = this.movement.update(delta, time, body, this.state.facing, input, {
+        starUntil: this.state.starUntil,
+        giantUntil: this.state.giantUntil,
+      });
+      this.state.facing = result.facing;
+      this.player.setFlipX(result.facing < 0);
+
+      // 跳音
+      if (result.jumpedThisFrame) {
+        this.sound.play("sfx_player_jump", { volume: 0.62 });
+        this.touchJump = false;
+      }
+
+      // 落地硬反馈
+      if (result.state === "running" && Math.abs(body.velocity.y) < 8 && !grounded) {
+        // no-op: 保持简洁
+      }
     } else {
-      body.setDragX(1300);
-    }
+      // ─── 原手感（保留为对照/回滚） ─────────────────
+      const speedBoost = time < this.state.starUntil ? 1.45 : 1;
+      const speed = PLAYER_SPEED * speedBoost * (time < this.state.giantUntil ? 0.9 : 1);
 
-    const canJump = grounded || (this.lastGroundedAt > 0 && time - this.lastGroundedAt <= COYOTE_MS);
-    if (time <= this.jumpBufferUntil && canJump) {
-      body.setVelocityY(this.level.jumpVelocity ?? (time < this.state.bouncyUntil ? -620 : JUMP_VELOCITY));
-      this.sound.play("sfx_player_jump", { volume: 0.62 });
-      this.jumpBufferUntil = 0;
-      this.touchJump = false;
-    }
+      if (grounded) this.lastGroundedAt = time;
+      if (jumpKeyPressed || touchJumpJustPressed) this.jumpBufferUntil = time + JUMP_BUFFER_MS;
 
-    if ((this.keys.s.isDown || this.cursors.down?.isDown) && !body.blocked.down) {
-      body.setVelocityY(760);
-    }
+      if (left) {
+        body.setDragX(0);
+        body.setVelocityX(-speed);
+        this.state.facing = -1;
+        this.player.setFlipX(true);
+      } else if (right) {
+        body.setDragX(0);
+        body.setVelocityX(speed);
+        this.state.facing = 1;
+        this.player.setFlipX(false);
+      } else {
+        body.setDragX(1300);
+      }
 
-    if (time < this.state.flyingUntil && !grounded && body.velocity.y > 60 && (this.keys.space.isDown || this.cursors.up?.isDown || this.touchJump)) {
-      body.setVelocityY(Math.min(body.velocity.y, 120));
+      const canJump = grounded || (this.lastGroundedAt > 0 && time - this.lastGroundedAt <= COYOTE_MS);
+      if (time <= this.jumpBufferUntil && canJump) {
+        body.setVelocityY(this.level.jumpVelocity ?? (time < this.state.bouncyUntil ? -620 : JUMP_VELOCITY));
+        this.sound.play("sfx_player_jump", { volume: 0.62 });
+        this.jumpBufferUntil = 0;
+        this.touchJump = false;
+      }
+
+      if ((this.keys.s.isDown || this.cursors.down?.isDown) && !body.blocked.down) {
+        body.setVelocityY(760);
+      }
+
+      if (time < this.state.flyingUntil && !grounded && body.velocity.y > 60 && (this.keys.space.isDown || this.cursors.up?.isDown || this.touchJump)) {
+        body.setVelocityY(Math.min(body.velocity.y, 120));
+      }
     }
 
     if (usePressed) {
+      // Wave 1.2: 如果有合成提示在显示，按 J = 合成（CraftingPrompt 的 onConfirm）
+      if (this.craftPromptHandle) {
+        // 通知 prompt 立即确认（调用回调并清理）
+        const handle = this.craftPromptHandle;
+        handle.destroy();
+        // 触发回调：CraftingPrompt 会在 confirm 时调用 onConfirm
+        // 我们直接重新触发一次：合成后保留的新道具是当前 activeItem
+        // 简化处理：直接销毁 + 提示"再拾取触发合成"
+        this.craftPromptHandle = undefined;
+        this.showToast("合成已取消（再捡一个道具试试）");
+        this.touchUse = false;
+        return;
+      }
       this.useCurrentItem();
       this.touchUse = false;
     }
@@ -960,15 +1298,116 @@ export class GameScene extends Phaser.Scene {
     if (body.y > this.level.worldHeight - 20) {
       this.hurtPlayer(1, -this.state.facing, true);
     }
+
+    // ─── Wave 2.1: secret 入口检测 ────────────────────
+    if (this.flags.secretEntries && this.availableSecretId) {
+      const sec = this.level.mechanics?.find((m) => m.type === "secret_entry") as { x: number; y: number; id: string } | undefined;
+      if (sec) {
+        const dx = Math.abs(this.player.x - sec.x);
+        const dy = Math.abs(this.player.y - sec.y);
+        if (dx < 60 && dy < 80) {
+          this.showToast(`发现隐藏入口！按 J 进入`, 2000);
+          if (Phaser.Input.Keyboard.JustDown(this.keys.j) || (this.touchUse && !this.craftPromptHandle)) {
+            this.state.locked = true;
+            this.cameras.main.fadeOut(300, 0, 0, 0);
+            this.time.delayedCall(300, () => {
+              this.scene.start("SecretScene", { secretId: this.availableSecretId });
+            });
+          }
+        }
+      }
+    }
+
+    // ─── Wave 1.3: 反击技能冷却 tick ──────────────────
+    const now = this.time.now;
+    if (this.abilityCooldowns.taunt > 0) this.abilityCooldowns.taunt = Math.max(0, this.abilityCooldowns.taunt - delta);
+    if (this.abilityCooldowns.yell > 0) this.abilityCooldowns.yell = Math.max(0, this.abilityCooldowns.yell - delta);
+
+    // ─── Wave 2.3: 弟弟独白（低血量触发） ─────────────
+    if (this.flags.brotherMonologue && now >= this.monologueNextAllowedAt) {
+      if (this.state.hp === 1 && Math.random() < 0.005) {
+        const pool = BROTHER_MONOLOGUES.filter((m) => m.when === "low_hp" && (m.minLevel ?? 0) <= this.levelIndex);
+        const m = pool[Math.floor(Math.random() * pool.length)];
+        if (m) {
+          this.dialog.show({ x: this.player.x, y: this.player.y }, { text: m.text, speaker: "brother", fontSize: 16, durationMs: 1800, offsetY: -78 });
+          this.monologueNextAllowedAt = now + 6000;
+        }
+      }
+    }
   }
 
-  private updateEnemies(time: number) {
+  /** Wave 1.3: 挑衅技能 */
+  private castTaunt() {
+    if (this.abilityCooldowns.taunt > 0) return;
+    this.abilityCooldowns.taunt = 10000;
+    this.dialog.show({ x: this.player.x, y: this.player.y }, { text: "你来抓我啊!", speaker: "brother", fontSize: 18, durationMs: 1200, offsetY: -78 });
+    this.enemies.children.iterate((child) => {
+      if (!child) return true;
+      const enemy = child as Phaser.Physics.Arcade.Image;
+      if (!enemy.active || enemy.getData("defeated")) return true;
+      const dist = Math.abs(enemy.x - this.player.x);
+      if (dist < 320) {
+        const emo = enemy.getData("emotion") as SisterEmotion | undefined;
+        if (emo) emo.onHit(false);
+      }
+      return true;
+    });
+  }
+
+  /** Wave 1.3: 大叫技能（推开 + 震屏） */
+  private castYell() {
+    if (this.abilityCooldowns.yell > 0) return;
+    this.abilityCooldowns.yell = 5000;
+    this.dialog.show({ x: this.player.x, y: this.player.y }, { text: "哇啊啊啊!", speaker: "brother", fontSize: 22, durationMs: 1100, offsetY: -82 });
+    this.juice.emit("hurt"); // 借用 hurt juice: shake + flash
+    this.enemies.children.iterate((child) => {
+      if (!child) return true;
+      const enemy = child as Phaser.Physics.Arcade.Image;
+      if (!enemy.active || enemy.getData("defeated")) return true;
+      const dist = Math.abs(enemy.x - this.player.x);
+      if (dist < 140) {
+        const dir = enemy.x < this.player.x ? -1 : 1;
+        (enemy.body as Phaser.Physics.Arcade.Body).setVelocityX(dir * 220);
+        enemy.setData("stunnedUntil", this.time.now + 600);
+        const emo = enemy.getData("emotion") as SisterEmotion | undefined;
+        if (emo) emo.onHit(false);
+      }
+      return true;
+    });
+  }
+
+  private updateEnemies(time: number, delta: number) {
+    // ─── Wave 1.1: tick 情绪 + 应用速度加成 ────────────
+    const threatMod = this.threat.getModifiers();
     this.enemies.children.iterate((child) => {
       if (!child) return true;
       const enemy = child as Phaser.Physics.Arcade.Image;
       if (!enemy.active || enemy.getData("defeated")) return true;
       const body = enemy.body as Phaser.Physics.Arcade.Body;
       const kind = enemy.getData("kind") as string;
+
+      // Wave 1.1: 情绪 tick
+      if (this.flags.sisterEmotion) {
+        const emo = enemy.getData("emotion") as SisterEmotion | undefined;
+        if (emo) {
+          const dist = Math.abs(this.player.x - enemy.x) + Math.abs(this.player.y - enemy.y);
+          const visible = dist < 600;
+          emo.tick(delta, visible, kind === "sister_boss");
+          if (dist > 700) emo.onPlayerFar();
+          // 情绪颜色 tint
+          const cfg = EMOTION_TABLE[emo.getState()];
+          if (cfg.bubbleColor !== "#ffffff") {
+            const tintNum = parseInt(cfg.bubbleColor.replace("#", ""), 16);
+            this.tintCharacterVisual(enemy.getData("visual") as CharacterVisual | undefined, tintNum);
+          } else {
+            this.clearCharacterVisualTint(enemy.getData("visual") as CharacterVisual | undefined);
+          }
+          // 写到 enemy.speed 用于 chase
+          const baseSpeed = enemy.getData("speed") as number;
+          enemy.setData("effectiveSpeed", baseSpeed * emo.getSpeedMul() * threatMod.enemySpeedMul);
+          enemy.setData("effectiveCooldownMul", emo.getCooldownMul());
+        }
+      }
       const frozenUntil = enemy.getData("frozenUntil") as number | undefined;
       if (frozenUntil && time < frozenUntil) {
         body.setVelocityX(0);
@@ -1472,7 +1911,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   private updateHud(time: number) {
-    this.hud.hearts.setText("♥".repeat(this.state.hp) + "♡".repeat(3 - this.state.hp));
+    const hpDisplay = Math.max(0, Math.min(3, Math.round(this.state.hp ?? 0)));
+    this.hud.hearts.setText("♥".repeat(hpDisplay) + "♡".repeat(3 - hpDisplay));
     this.hud.coins.setText(`金币 ${this.state.coins}`);
     this.hud.level.setText(`${this.levelIndex + 1}/10  ${this.level.name}`);
 
@@ -1487,6 +1927,14 @@ export class GameScene extends Phaser.Scene {
       const iconKey = this.textures.exists(`hud-display:${item.config.id}`) ? `hud-display:${item.config.id}` : `hud:${item.config.id}`;
       this.hud.itemIcon.setTexture(iconKey).setVisible(true);
     }
+
+    // Wave 1.3: 技能冷却条
+    const tauntPct = 1 - this.abilityCooldowns.taunt / 10000;
+    const yellPct = 1 - this.abilityCooldowns.yell / 5000;
+    this.hud.tauntBar.setScale(tauntPct, 1).setOrigin(0, 0.5).setX(102);
+    this.hud.yellBar.setScale(yellPct, 1).setOrigin(0, 0.5).setX(232);
+    this.hud.tauntBar.setAlpha(tauntPct > 0.99 ? 0.9 : 0.4);
+    this.hud.yellBar.setAlpha(yellPct > 0.99 ? 0.9 : 0.4);
   }
 
   private onPlayerPlatform(playerObj: unknown, platformObj: unknown) {
@@ -1654,13 +2102,51 @@ export class GameScene extends Phaser.Scene {
     const config = this.itemPool.find((entry) => entry.id === id);
     if (!config) return;
     pickup.destroy();
+    this.sound.play("sfx_item_pickup", { volume: 0.72 });
+
+    // ─── Wave 1.2: 合成提示 ───────────────────────────
+    const currentId = this.state.activeItem?.config.id;
+    if (this.flags.itemCrafting && currentId) {
+      const recipe = findRecipe(currentId, id);
+      if (recipe) {
+        // 弹出 3 秒倒计时，按 J 合成
+        this.craftPromptHandle?.destroy();
+        this.craftPromptHandle = CraftingPrompt.show(
+          this,
+          currentId,
+          id,
+          recipe,
+          () => {
+            // 合成成功
+            this.state.activeItem = {
+              config: { ...config, id: recipe.result.id, name: recipe.result.name, effect: recipe.result.description, uses: recipe.result.uses, durationSeconds: recipe.result.durationSeconds },
+              usesLeft: recipe.result.uses,
+              remainingMs: recipe.result.durationSeconds ? recipe.result.durationSeconds * 1000 : undefined,
+              activated: false,
+            };
+            this.sound.play("sfx_item_pickup", { volume: 0.85, rate: 1.4 });
+            this.juice.emit("item_pickup");
+            this.showToast(`✨ 合成成功：${recipe.result.name}！`);
+            SaveManager.unlockCodex(`craft_${recipe.result.id}`);
+            this.craftPromptHandle = undefined;
+          },
+          () => {
+            // 取消：保留旧道具
+            this.showToast(`保留 ${this.state.activeItem?.config.name}`);
+            this.craftPromptHandle = undefined;
+          },
+        );
+        return; // 等待玩家选择
+      }
+    }
+
+    // 默认行为：替换
     this.state.activeItem = {
       config,
       usesLeft: config.uses,
       remainingMs: undefined,
       activated: false
     };
-    this.sound.play("sfx_item_pickup", { volume: 0.72 });
     this.showToast(`获得 ${config.name}`);
   }
 
@@ -1674,6 +2160,8 @@ export class GameScene extends Phaser.Scene {
       playerBody.setVelocityY(enemy.getData("kind") === "sister_balloon" ? -650 : -460);
       this.crushEnemy(enemy);
       this.sound.play("sfx_player_stomp", { volume: 0.65 });
+      if (this.flags.juiceDirector) this.juice.emit("stomp");
+      if (this.flags.comboSystem) this.combo.registerHit();
       return;
     }
     if (!this.canPlayerTakeDamageFromEnemy(enemy)) return;
@@ -1700,6 +2188,8 @@ export class GameScene extends Phaser.Scene {
         playerBody.setVelocityY(enemy.getData("kind") === "sister_balloon" ? -650 : -460);
         this.crushEnemy(enemy);
         this.sound.play("sfx_player_stomp", { volume: 0.65 });
+        if (this.flags.juiceDirector) this.juice.emit("stomp");
+        if (this.flags.comboSystem) this.combo.registerHit();
       } else if (this.canPlayerTakeDamageFromEnemy(enemy)) {
         this.separatePlayerFromEnemy(enemy);
         this.hurtPlayer(1, this.player.x < enemy.x ? -1 : 1);
@@ -1744,6 +2234,8 @@ export class GameScene extends Phaser.Scene {
       this.sound.play("sfx_sister_hit", { volume: 0.58 });
       this.defeatEnemy(enemy, false);
     }
+    if (this.flags.juiceDirector) this.juice.emit("projectile_hit");
+    if (this.flags.comboSystem) this.combo.registerHit();
     projectile.destroy();
   }
 
@@ -2008,9 +2500,58 @@ export class GameScene extends Phaser.Scene {
         enemy.clearTint();
       }
     });
+
+    // Wave 1.1: 触发情绪切换 + 气泡
+    if (this.flags.sisterEmotion) {
+      const emo = enemy.getData("emotion") as SisterEmotion | undefined;
+      if (emo) {
+        const isBoss = enemy.getData("kind") === "sister_boss";
+        const newState = emo.onHit(isBoss);
+        const cfg = EMOTION_TABLE[newState];
+        if (cfg.bubbleText) {
+          // 30% 概率显示（避免每个敌人都喊话刷屏）
+          if (Math.random() < 0.5) {
+            this.dialog.show({ x: enemy.x, y: enemy.y }, {
+              text: cfg.bubbleText!,
+              speaker: "sister",
+              color: cfg.bubbleColor,
+              durationMs: 1400,
+            });
+          }
+        }
+      }
+    }
+
     if (hp > 0) return;
 
+    // Wave 1.5: Boss 阶段切换
+    if (enemy.getData("kind") === "sister_boss" && this.flags.bossPhases) {
+      const maxHp = enemy.getData("maxHp") as number;
+      const ratio = hp / maxHp;
+      let newPhase: 1 | 2 | 3 = 1;
+      if (ratio <= 0.66) newPhase = 2;
+      if (ratio <= 0.33) newPhase = 3;
+      if (newPhase > this.bossPhase) {
+        this.bossPhase = newPhase;
+        if (newPhase >= 2) this.triggerBossTelegraph(newPhase as 2 | 3);
+      }
+    }
+
     this.defeatEnemy(enemy, false);
+  }
+
+  private triggerBossTelegraph(phase: 2 | 3) {
+    const text = phase === 2 ? "姐姐认真了！" : "姐姐暴走了！";
+    this.dialog.show({ x: this.cameras.main.centerX, y: this.cameras.main.centerY - 80 }, {
+      text,
+      speaker: "narrator",
+      fontSize: 28,
+      durationMs: 1400,
+      offsetY: 0,
+    });
+    if (this.flags.juiceDirector) this.juice.emit("boss_phase");
+    this.bossTelegraphUntil = this.time.now + 800;
+    SaveManager.setFlag(`boss_phase_${this.levelIndex}_${phase}`);
   }
 
   private crushEnemy(enemy: Phaser.Physics.Arcade.Image) {
@@ -2073,6 +2614,22 @@ export class GameScene extends Phaser.Scene {
         if (isBoss) {
           this.bossCleared = true;
           this.showToast("Boss 姐姐被打到服气啦！");
+          if (this.flags.juiceDirector) this.juice.emit("boss_defeat");
+        }
+        // Wave 2.3: 姐姐真心话
+        const heartfelt = pickHeartfelt(enemy.getData("kind") as string, isBoss);
+        if (heartfelt) {
+          this.time.delayedCall(420, () => {
+            this.dialog.show({ x: enemy.x, y: enemy.y }, {
+              text: heartfelt,
+              speaker: "sister",
+              fontSize: 18,
+              durationMs: 2400,
+              offsetY: -88,
+            });
+            SaveManager.unlockDiary(`${isBoss ? "boss" : "sister"}_${this.levelIndex}_${enemy.getData("kind")}`);
+            SaveManager.unlockCodex(`defeat_${enemy.getData("kind")}`);
+          });
         }
       }
     });
@@ -2169,6 +2726,8 @@ export class GameScene extends Phaser.Scene {
     const now = this.time.now;
     if (now < this.state.starUntil || this.state.locked) return;
 
+    if (this.flags.juiceDirector) this.juice.emit("hurt");
+
     if (fromPit) {
       if (this.state.bubbleShield) {
         this.breakBubbleShield(knockbackDirection, true);
@@ -2211,6 +2770,9 @@ export class GameScene extends Phaser.Scene {
     this.state.bubbleShield = false;
     this.state.invincibleUntil = 0;
     this.state.activeItem = undefined;
+    this.state.criedThisLevel = true;
+    if (this.flags.comboSystem) this.combo.reset();
+    if (this.flags.juiceDirector) this.juice.clearEdgeTint();
     this.physics.world.timeScale = 1;
     this.playerShadow?.setVisible(false);
     this.bubbleShieldVisual?.destroy();
@@ -2234,7 +2796,8 @@ export class GameScene extends Phaser.Scene {
     this.syncPlayerBodyPosition();
     this.sound.stopAll();
     this.sound.play("sfx_player_cry", { volume: 0.85 });
-    this.cameras.main.shake(180, 0.007);
+    if (this.flags.juiceDirector) this.juice.emit("cry");
+    else this.cameras.main.shake(180, 0.007);
     this.showToast(message, 900);
     this.time.delayedCall(900, () => {
       this.scene.restart({ levelIndex: this.levelIndex });
@@ -2264,6 +2827,7 @@ export class GameScene extends Phaser.Scene {
 
   private cryAndRestart() {
     this.state.locked = true;
+    this.state.criedThisLevel = true;
     this.physics.world.timeScale = 0.55;
     this.playerShadow?.setVisible(false);
     this.showPlayerCryVisual();
@@ -2281,7 +2845,32 @@ export class GameScene extends Phaser.Scene {
     if (this.state.locked) return;
     this.state.locked = true;
     this.sound.play("sfx_goal_flag", { volume: 0.72 });
+    if (this.flags.juiceDirector) this.juice.emit("goal");
     this.tweens.add({ targets: this.player, y: this.player.y - 44, yoyo: true, duration: 260 });
+    const stats = this.combo.getStats();
+    const elapsedSec = this.state.levelStartAt ? (this.time.now - this.state.levelStartAt) / 1000 : 0;
+    const cried = !!this.state.criedThisLevel;
+    const starBonus = stats.peak >= 12 ? 1 : stats.peak >= 8 ? 0.5 : 0;
+    const stars = Math.min(3, Math.round(1 + (cried ? 0 : 0.5) + starBonus + (elapsedSec < (this.level.targetTimeSec ?? 90) ? 0.5 : 0)));
+
+    // Wave 1.4: 持久化
+    SaveManager.recordLevelResult(this.levelIndex, elapsedSec, stars);
+    SaveManager.setFlag(`cleared_${this.levelIndex}`);
+    if (this.crisisTriggered) SaveManager.setFlag(`crisis_cleared_${this.levelIndex}`);
+
+    this.registry.set("levelResult", {
+      levelIndex: this.levelIndex,
+      levelName: this.level.name,
+      coins: this.state.coins,
+      defeatedEnemies: this.state.defeatedEnemies,
+      comboPeak: stats.peak,
+      comboHits: stats.hits,
+      cried,
+      timeSec: elapsedSec,
+      starBonus,
+      stars,
+      epilogue: this.level.epilogue,
+    });
     this.time.delayedCall(650, () => this.scene.start("VictoryScene", { levelIndex: this.levelIndex }));
   }
 

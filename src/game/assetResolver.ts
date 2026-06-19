@@ -18,7 +18,8 @@ const assetModules = import.meta.glob(
 ) as Record<string, string>;
 
 export function assetUrl(path: string): string {
-  return assetModules[`../../${path}`] ?? `/${path}`;
+  const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+  return assetModules[`../../${path}`] ?? `${base}/${path}`;
 }
 
 export function audioUrls(files: { ogg?: string; mp3?: string; wav?: string }): string[] {
