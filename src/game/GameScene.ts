@@ -28,6 +28,10 @@ type PlayerState = {
   giantUntil: number;
   facing: 1 | -1;
   locked: boolean;
+  /** locked 被设置的时间戳（用于安全重启） */
+  lockedAt?: number;
+  /** 计划重启的时间戳（0 = 未计划） */
+  restartAt?: number;
   /** Wave 0.4：本次关卡是否哭过 */
   criedThisLevel?: boolean;
   /** Wave 0.5：关卡开始时刻（用于 elapsedSec） */
@@ -252,7 +256,9 @@ export class GameScene extends Phaser.Scene {
       flyingUntil: 0,
       giantUntil: 0,
       facing: 1,
-      locked: false
+      locked: false,
+      lockedAt: 0,
+      restartAt: 0,
     };
     this.bossCleared = false;
     this.lastGroundedAt = 0;
@@ -417,7 +423,7 @@ export class GameScene extends Phaser.Scene {
     });
 
     // 输出到 console + 屏幕 + localStorage
-    const finalReport = { log, errs, playerX: this.player.x, hp: this.state.hp, coins: this.state.coins, frameTested: 60 - frames };
+    const finalReport = { passed: errs.length === 0, log, errs, playerX: this.player.x, hp: this.state.hp, coins: this.state.coins, frameTested: 60 - frames };
     console.log('[SELFTEST]', JSON.stringify(finalReport, null, 2));
     (window as unknown as { __selftest?: unknown }).__selftest = finalReport;
     try { localStorage.setItem('selftest_result', JSON.stringify(finalReport)); } catch {}
@@ -441,6 +447,8 @@ export class GameScene extends Phaser.Scene {
     // ─── Wave 0.3：ComboSystem 倒计时（locked 时也跑，连击不冻结）──
     if (this.flags.comboSystem) this.combo.tick(delta);
 
+    // 死亡重启 + 安全网（在 locked 守卫之前检查）
+    this.handlePendingRestart();
     if (this.state.locked) return;
 
     this.updatePlayer(time, delta);
@@ -1212,12 +1220,8 @@ export class GameScene extends Phaser.Scene {
         stompHeld: this.keys.s.isDown || this.cursors.down?.isDown === true,
         useDown: usePressed,
       };
-      // 有水平输入时禁用 drag，让 MovementController 全权控制
-      if (left || right) {
-        body.setDragX(0);
-      } else {
-        body.setDragX(this.movement.getConfig().groundDecel);
-      }
+      // 新路径：完全禁用 Phaser drag，MovementController 自己管减速
+      body.setDragX(0);
       // 把 flyingUntil 同步给 movement（飞行帽）
       if (time < this.state.flyingUntil) this.movement.setFlying(this.state.flyingUntil);
 
@@ -1309,6 +1313,7 @@ export class GameScene extends Phaser.Scene {
           this.showToast(`发现隐藏入口！按 J 进入`, 2000);
           if (Phaser.Input.Keyboard.JustDown(this.keys.j) || (this.touchUse && !this.craftPromptHandle)) {
             this.state.locked = true;
+            this.state.lockedAt = this.time.now;
             this.cameras.main.fadeOut(300, 0, 0, 0);
             this.time.delayedCall(300, () => {
               this.scene.start("SecretScene", { secretId: this.availableSecretId });
@@ -2766,6 +2771,7 @@ export class GameScene extends Phaser.Scene {
   private failAndRestartLevel(message: string) {
     if (this.state.locked) return;
     this.state.locked = true;
+    this.state.lockedAt = this.time.now;
     this.state.hp = 0;
     this.state.bubbleShield = false;
     this.state.invincibleUntil = 0;
@@ -2788,20 +2794,38 @@ export class GameScene extends Phaser.Scene {
     this.showPlayerCryVisual();
     this.player.setDepth(20);
     this.player.setVelocity(0, 0);
-    const cryDisplay = this.getAspectDisplaySize("brother_cry_defeat", CHAR_HEIGHT.playerCry);
-    this.setFeetAlignedBodyBox(
-      this.player,
-      this.scaleBodyBox(CHAR_BODY.playerCry, CHAR_DISPLAY_REF.playerCry, cryDisplay)
-    );
     this.syncPlayerBodyPosition();
     this.sound.stopAll();
     this.sound.play("sfx_player_cry", { volume: 0.85 });
     if (this.flags.juiceDirector) this.juice.emit("cry");
     else this.cameras.main.shake(180, 0.007);
     this.showToast(message, 900);
-    this.time.delayedCall(900, () => {
-      this.scene.restart({ levelIndex: this.levelIndex });
-    });
+
+    // 不用 timer 回调，改用 update 循环中时间戳驱动（更可靠）
+    this.state.restartAt = this.time.now + 900;
+  }
+
+  /** 死亡重启逻辑：在 update 循环中驱动（不依赖 timer 回调） */
+  private handlePendingRestart() {
+    if (!this.state.locked || this.state.hp > 0) return;
+    const now = this.time.now;
+
+    // 正常重启：restartAt 到期
+    const restartAt = this.state.restartAt;
+    if (restartAt && now >= restartAt) {
+      this.state.restartAt = 0;
+      this.state.locked = false;
+      this.scene.start("GameScene", { levelIndex: this.levelIndex });
+      return;
+    }
+
+    // 安全网：locked 超过 5 秒还没重启，强制重启
+    const lockedAt = this.state.lockedAt;
+    if (lockedAt && lockedAt > 0 && now - lockedAt > 5000) {
+      this.state.restartAt = 0;
+      this.state.locked = false;
+      this.scene.start("GameScene", { levelIndex: this.levelIndex });
+    }
   }
 
   private expireTimedItem(id: string) {
@@ -2827,6 +2851,7 @@ export class GameScene extends Phaser.Scene {
 
   private cryAndRestart() {
     this.state.locked = true;
+    this.state.lockedAt = this.time.now;
     this.state.criedThisLevel = true;
     this.physics.world.timeScale = 0.55;
     this.playerShadow?.setVisible(false);
@@ -2844,6 +2869,7 @@ export class GameScene extends Phaser.Scene {
   private finishLevel() {
     if (this.state.locked) return;
     this.state.locked = true;
+    this.state.lockedAt = this.time.now;
     this.sound.play("sfx_goal_flag", { volume: 0.72 });
     if (this.flags.juiceDirector) this.juice.emit("goal");
     this.tweens.add({ targets: this.player, y: this.player.y - 44, yoyo: true, duration: 260 });
