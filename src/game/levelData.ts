@@ -68,7 +68,7 @@ export const LEVELS: LevelConfig[] = [
       { kind: "sister_small", x: 710, y: 617, patrol: [560, 680] },
       { kind: "sister_small", x: 1280, y: 629, patrol: [1180, 1380] },
       { kind: "sister_headphone", x: 2260, y: 640, patrol: [2120, 2420] },
-      { kind: "sister_boss", x: 3920, y: 690, hp: 3 }
+      { kind: "sister_boss", x: 3920, y: 690, hp: 5 }
     ],
     questionBlocks: [
       { x: 620, y: questionBlockY(698) },
@@ -119,7 +119,7 @@ export const LEVELS: LevelConfig[] = [
       { kind: "sister_small", x: 1950, y: 629, patrol: [1820, 2080] },
       { kind: "sister_pipe", x: 2400, y: 730, patrol: [2280, 2520] },
       { kind: "sister_headphone", x: 2850, y: 640, patrol: [2640, 3060] },
-      { kind: "sister_boss", x: 4080, y: 690, hp: 3 }
+      { kind: "sister_boss", x: 4080, y: 690, hp: 6 }
     ],
     questionBlocks: [
       { x: 850, y: questionBlockY(668) },
@@ -172,7 +172,7 @@ export const LEVELS: LevelConfig[] = [
       { kind: "sister_headphone", x: 2000, y: 629, patrol: [1940, 2060] },
       { kind: "sister_headphone", x: 2880, y: 619, patrol: [2820, 2940] },
       { kind: "sister_balloon", x: 3550, y: 570, patrol: [3420, 3680] },
-      { kind: "sister_boss", x: 4050, y: 690, hp: 4 }
+      { kind: "sister_boss", x: 4050, y: 690, hp: 7 }
     ],
     questionBlocks: [
       { x: 620, y: questionBlockY(690) },
@@ -225,7 +225,7 @@ export const LEVELS: LevelConfig[] = [
       { kind: "sister_small", x: 2380, y: 740, patrol: [2260, 2500] },
       { kind: "sister_headphone", x: 2100, y: 640, patrol: [1980, 2220] },
       { kind: "sister_pipe", x: 2980, y: 730, hp: 2, patrol: [2860, 3100] },
-      { kind: "sister_boss", x: 3920, y: 690, hp: 4 }
+      { kind: "sister_boss", x: 3920, y: 690, hp: 8 }
     ],
     questionBlocks: [
       { x: 700, y: questionBlockY(660) },
@@ -284,7 +284,7 @@ export const LEVELS: LevelConfig[] = [
       { kind: "sister_headphone", x: 2420, y: 637, patrol: [2360, 2480] },
       { kind: "sister_pipe", x: 2860, y: 730, hp: 2, patrol: [2800, 2920] },
       { kind: "sister_balloon", x: 3080, y: 527, patrol: [2960, 3200] },
-      { kind: "sister_boss", x: 3920, y: 690, hp: 4 }
+      { kind: "sister_boss", x: 3920, y: 690, hp: 9 }
     ],
     questionBlocks: [
       { x: 720, y: questionBlockY(600) },
@@ -334,7 +334,7 @@ export const LEVELS: LevelConfig[] = [
       { kind: "sister_headphone", x: 2450, y: 647, patrol: [2380, 2520] },
       { kind: "sister_pipe", x: 2850, y: 730, hp: 2, patrol: [2780, 2920] },
       { kind: "sister_balloon", x: 3600, y: 527, patrol: [3480, 3720] },
-      { kind: "sister_boss", x: 4120, y: 690, hp: 5 }
+      { kind: "sister_boss", x: 4120, y: 690, hp: 10 }
     ],
     questionBlocks: [
       { x: 1000, y: questionBlockY(710) },
@@ -388,7 +388,7 @@ export const LEVELS: LevelConfig[] = [
       { kind: "sister_pipe", x: 2920, y: 730, hp: 2, patrol: [2840, 3000] },
       { kind: "sister_balloon", x: 3260, y: 527, patrol: [3140, 3380] },
       { kind: "sister_headphone", x: 3600, y: 632, patrol: [3520, 3680] },
-      { kind: "sister_boss", x: 4120, y: 690, hp: 5 }
+      { kind: "sister_boss", x: 4120, y: 690, hp: 11 }
     ],
     questionBlocks: [
       { x: 680, y: questionBlockY(680) },
@@ -448,7 +448,7 @@ export const LEVELS: LevelConfig[] = [
       { kind: "sister_pipe", x: 2680, y: 730, hp: 2, patrol: [2600, 2760] },
       { kind: "sister_balloon", x: 2940, y: 487, patrol: [2880, 3000] },
       { kind: "sister_headphone", x: 3480, y: 617, patrol: [3400, 3560] },
-      { kind: "sister_boss", x: 4020, y: 690, hp: 5 }
+      { kind: "sister_boss", x: 4020, y: 690, hp: 12 }
     ],
     questionBlocks: [
       { x: 620, y: questionBlockY(680) },
@@ -506,7 +506,7 @@ export const LEVELS: LevelConfig[] = [
       { kind: "sister_headphone", x: 3260, y: 497, patrol: [3200, 3320] },
       { kind: "sister_pipe", x: 3660, y: 730, hp: 3, patrol: [3580, 3740] },
       { kind: "sister_balloon", x: 4060, y: 487, patrol: [4000, 4120] },
-      { kind: "sister_boss", x: 4420, y: 690, hp: 6 }
+      { kind: "sister_boss", x: 4420, y: 690, hp: 14 }
     ],
     questionBlocks: [
       { x: 980, y: questionBlockY(630) },
@@ -566,7 +566,7 @@ export const LEVELS: LevelConfig[] = [
       { kind: "sister_headphone", x: 3100, y: 597, patrol: [3040, 3160] },
       { kind: "sister_pipe", x: 3340, y: 730, hp: 3, patrol: [3280, 3400] },
       { kind: "sister_balloon", x: 3580, y: 577, patrol: [3520, 3640] },
-      { kind: "sister_boss", x: 4250, y: 660, hp: 6 }
+      { kind: "sister_boss", x: 4250, y: 660, hp: 18 }
     ],
     questionBlocks: [
       { x: 900, y: questionBlockY(718) },

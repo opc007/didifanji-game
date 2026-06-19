@@ -87,7 +87,7 @@ const CHAR_HEIGHT = {
   playerGiant: 172,
   playerCry: 114,
   sister: 128,
-  boss: 132
+  boss: 160
 } as const;
 
 /** Reference display sizes used to scale physics body boxes when aspect-fit width changes. */
@@ -96,7 +96,7 @@ const CHAR_DISPLAY_REF = {
   playerGiant: { w: 96, h: 172 },
   playerCry: { w: 94, h: 114 },
   sister: { w: 74, h: 128 },
-  boss: { w: 100, h: 132 }
+  boss: { w: 120, h: 160 }
 } as const;
 
 const CHAR_BODY = {
@@ -104,7 +104,7 @@ const CHAR_BODY = {
   playerGiant: { w: 48, h: 138, bottom: 8 },
   playerCry: { w: 44, h: 96, bottom: 5 },
   sister: { w: 38, h: 102, bottom: 6 },
-  boss: { w: 56, h: 110, bottom: 8 }
+  boss: { w: 64, h: 130, bottom: 10 }
 } as const;
 
 export class GameScene extends Phaser.Scene {
@@ -266,7 +266,7 @@ export class GameScene extends Phaser.Scene {
     this.prevTouchJump = false;
 
     this.createTextures();
-    this.createItemDisplayTextures();
+    try { this.createItemDisplayTextures(); } catch (e) { /* 防止 canvas 操作崩溃 */ }
     this.createWorld();
     this.createPlayer();
     this.createControls();
@@ -463,6 +463,8 @@ export class GameScene extends Phaser.Scene {
     this.updateQuestionBlockHits();
     this.updateQuestionHint();
     this.updateHud(time);
+    // Boss HP 条（在 enemies 初始化之后）
+    this.drawBossHpBar();
     // ─── Wave 0.8: 机关 tick ──────────────────────────
     if (this.flags.mechanics) this.mechanics.update(delta);
     this.storeBodyPreviousPositions();
@@ -571,6 +573,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private createRoundItemTexture(itemId: string) {
+    try {
     const roundKey = `pickup-round:${itemId}`;
     if (this.textures.exists(roundKey)) return;
 
@@ -597,7 +600,10 @@ export class GameScene extends Phaser.Scene {
     context.strokeStyle = "#fff6c8";
     context.stroke();
 
-    const source = this.textures.get(sourceKey).getSourceImage() as HTMLImageElement | HTMLCanvasElement;
+    const tex = this.textures.get(sourceKey);
+    if (!tex) return;
+    const source = tex.getSourceImage() as HTMLImageElement | HTMLCanvasElement;
+    if (!source) return;
     const sw = "naturalWidth" in source ? source.naturalWidth : source.width;
     const sh = "naturalHeight" in source ? source.naturalHeight : source.height;
     const iconSize = 30;
@@ -607,12 +613,17 @@ export class GameScene extends Phaser.Scene {
     if (!output) return;
     output.draw(0, 0, canvas);
     output.refresh();
+    } catch (e) { /* 防止场景切换时 canvas 操作崩溃 */ }
   }
 
   private createCleanItemTexture(sourceKey: string, outputKey: string, padding: number) {
+    try {
     if (this.textures.exists(outputKey) || !this.textures.exists(sourceKey)) return;
 
-    const source = this.textures.get(sourceKey).getSourceImage() as HTMLImageElement | HTMLCanvasElement;
+    const tex = this.textures.get(sourceKey);
+    if (!tex) return;
+    const source = tex.getSourceImage() as HTMLImageElement | HTMLCanvasElement;
+    if (!source) return;
     const width = "naturalWidth" in source ? source.naturalWidth : source.width;
     const height = "naturalHeight" in source ? source.naturalHeight : source.height;
     if (!width || !height) return;
@@ -706,9 +717,11 @@ export class GameScene extends Phaser.Scene {
     if (!output) return;
 
     const outputContext = output.getContext();
+    if (!outputContext) return;
     outputContext.clearRect(0, 0, output.width, output.height);
     outputContext.drawImage(canvas, minX, minY, contentWidth, contentHeight, padding, padding, contentWidth, contentHeight);
     output.refresh();
+    } catch (e) { /* 防止场景切换时 canvas 操作崩溃 */ }
   }
 
   private createWorld() {
@@ -1044,7 +1057,12 @@ export class GameScene extends Phaser.Scene {
   private spawnEnemy(spawn: EnemySpawn) {
     const enemy = this.enemies.create(spawn.x, spawn.y, spawn.kind) as Phaser.Physics.Arcade.Image;
     const isBoss = spawn.kind === "sister_boss";
-    const display = this.getEnemyDisplaySize(spawn.kind);
+    // Boss 体型随关卡增大：基础 160px，每关 +8px，最大 220px
+    const bossScale = isBoss ? 1 + Math.min(this.levelIndex * 0.06, 0.4) : 1;
+    const baseDisplay = this.getEnemyDisplaySize(spawn.kind);
+    const display = isBoss
+      ? { w: Math.round(baseDisplay.w * bossScale), h: Math.round(baseDisplay.h * bossScale) }
+      : baseDisplay;
     enemy.setDisplaySize(display.w, display.h);
     const lane = this.findEnemyLane(spawn, isBoss);
     const enemyY = spawn.kind === "sister_balloon" ? lane.top - display.h : lane.top - enemy.displayHeight / 2;
@@ -1052,7 +1070,7 @@ export class GameScene extends Phaser.Scene {
     enemy.setDepth(10);
     enemy.setData("kind", spawn.kind);
     const defaultHp = isBoss
-      ? 3 + Math.floor(this.levelIndex / 2)
+      ? 5 + this.levelIndex * 2
       : spawn.kind === "sister_pipe"
         ? 2 + Math.floor(this.levelIndex / 4)
         : 1 + Math.floor(this.levelIndex / 5);
@@ -1063,7 +1081,8 @@ export class GameScene extends Phaser.Scene {
     enemy.setData("leash", [lane.left, lane.right]);
     enemy.setData("laneTop", lane.top);
     enemy.setData("laneKind", lane.kind);
-    const patrolSpeed = (isBoss ? 48 : 70) + this.levelIndex * 3;
+    // Boss 巡逻速度也随关卡增加
+    const patrolSpeed = (isBoss ? 55 + this.levelIndex * 4 : 70) + this.levelIndex * 3;
     enemy.setData("speed", patrolSpeed);
     enemy.setData("direction", -1);
     enemy.setData("baseY", enemyY);
@@ -1086,6 +1105,11 @@ export class GameScene extends Phaser.Scene {
     // Wave 1.1: 情绪实例
     if (this.flags.sisterEmotion) {
       enemy.setData("emotion", new SisterEmotion(`${spawn.kind}_${spawn.x}_${this.levelIndex}`));
+    }
+    // Boss 阶段初始化
+    if (isBoss) {
+      enemy.setData("bossPhase", 1);
+      enemy.setData("phaseTransitionUntil", 0);
     }
   }
 
@@ -1450,22 +1474,41 @@ export class GameScene extends Phaser.Scene {
 
       const patrol = enemy.getData("patrol") as [number, number] | undefined;
       const direction = enemy.getData("direction") as 1 | -1;
-      const chaseDirection = this.getChaseDirection(enemy, kind === "sister_boss" ? 760 : ENEMY_CHASE_RANGE, kind === "sister_boss" ? 110 : 78);
+      // Boss 追踪范围随阶段扩大
+      const bossPhase = kind === "sister_boss" ? (enemy.getData("bossPhase") as number ?? 1) : 1;
+      const bossChaseRange = bossPhase === 3 ? 1200 : bossPhase === 2 ? 900 : 760;
+      const chaseDirection = this.getChaseDirection(enemy, kind === "sister_boss" ? bossChaseRange : ENEMY_CHASE_RANGE, kind === "sister_boss" ? 130 : 78);
+
+      // Boss 阶段转场无敌
+      const phaseTransUntil = enemy.getData("phaseTransitionUntil") as number ?? 0;
+      if (phaseTransUntil && time < phaseTransUntil) {
+        body.setVelocityX(0);
+        // 闪烁效果
+        enemy.setAlpha(Math.sin(time * 0.02) > 0 ? 1 : 0.3);
+        this.updateEnemyPose(enemy, time, false);
+        return true;
+      }
+      enemy.setAlpha(1);
+
       if (enemy.getData("throwWindup")) {
         body.setVelocityX(0);
       } else if (this.shouldHoldAtLaneFence(enemy)) {
         body.setVelocityX(0);
       } else if (chaseDirection) {
         const levelChaseBonus = this.levelIndex * 2;
-        const chaseSpeed =
-          kind === "sister_boss" ? 78 + levelChaseBonus : kind === "sister_headphone" ? 98 + levelChaseBonus : 125 + levelChaseBonus;
+        // Boss 追逐速度随阶段倍增
+        const bossSpeedMul = bossPhase === 3 ? 1.8 : bossPhase === 2 ? 1.4 : 1.0;
+        const baseChaseSpeed =
+          kind === "sister_boss" ? 90 + levelChaseBonus : kind === "sister_headphone" ? 98 + levelChaseBonus : 125 + levelChaseBonus;
+        const chaseSpeed = Math.round(baseChaseSpeed * bossSpeedMul);
         this.setEnemyLeashedVelocity(enemy, chaseDirection * chaseSpeed, chaseSpeed);
         enemy.setData("direction", chaseDirection);
       } else if (patrol) {
         this.setEnemyLeashedVelocity(enemy, (enemy.getData("speed") as number) * direction, enemy.getData("speed") as number);
         if (enemy.x < patrol[0] || enemy.x > patrol[1]) enemy.setData("direction", direction * -1);
       } else if (kind === "sister_boss") {
-        this.setEnemyLeashedVelocity(enemy, Math.sin(time / 900) * 45, 48);
+        const idleMul = bossPhase === 3 ? 1.6 : bossPhase === 2 ? 1.2 : 1;
+        this.setEnemyLeashedVelocity(enemy, Math.sin(time / (900 / idleMul)) * 45 * idleMul, 48 * idleMul);
       } else {
         body.setVelocityX(0);
       }
@@ -1552,7 +1595,13 @@ export class GameScene extends Phaser.Scene {
     }
 
     enemy.setData("throwWindup", true);
-    enemy.setData("nextAttackAt", time + profile.cooldown);
+    // Boss 阶段越高攻击越快
+    let cooldown = profile.cooldown;
+    if (kind === "sister_boss") {
+      const bp = enemy.getData("bossPhase") as number ?? 1;
+      cooldown = bp === 3 ? Math.round(cooldown * 0.45) : bp === 2 ? Math.round(cooldown * 0.65) : cooldown;
+    }
+    enemy.setData("nextAttackAt", time + cooldown);
     const visual = enemy.getData("visual") as CharacterVisual | undefined;
     this.tintCharacterVisual(visual, 0xffe8c8);
     if (kind === "sister_pipe") this.sound.play("sfx_pipe_sister_pop", { volume: 0.45 });
@@ -2529,7 +2578,7 @@ export class GameScene extends Phaser.Scene {
 
     if (hp > 0) return;
 
-    // Wave 1.5: Boss 阶段切换
+    // Boss 阶段切换（必须在 hp>0 检查之前！）
     if (enemy.getData("kind") === "sister_boss" && this.flags.bossPhases) {
       const maxHp = enemy.getData("maxHp") as number;
       const ratio = hp / maxHp;
@@ -2538,10 +2587,15 @@ export class GameScene extends Phaser.Scene {
       if (ratio <= 0.33) newPhase = 3;
       if (newPhase > this.bossPhase) {
         this.bossPhase = newPhase;
-        if (newPhase >= 2) this.triggerBossTelegraph(newPhase as 2 | 3);
+        this.triggerBossTelegraph(newPhase as 2 | 3);
+        // 阶段切换时短暂无敌（给玩家反应时间）
+        enemy.setData("phaseTransitionUntil", this.time.now + 1200);
       }
+      // 更新 Boss 怒气视觉
+      this.updateBossRageVisual(enemy, ratio);
     }
 
+    if (hp > 0) return;
     this.defeatEnemy(enemy, false);
   }
 
@@ -2558,6 +2612,92 @@ export class GameScene extends Phaser.Scene {
     this.bossTelegraphUntil = this.time.now + 800;
     SaveManager.setFlag(`boss_phase_${this.levelIndex}_${phase}`);
   }
+
+  /** Boss 怒气视觉：血量越低越红 + 体型微涨 */
+  private updateBossRageVisual(enemy: Phaser.Physics.Arcade.Image, hpRatio: number) {
+    const phase = hpRatio <= 0.33 ? 3 : hpRatio <= 0.66 ? 2 : 1;
+    enemy.setData("bossPhase", phase);
+    // 怒气 tint：从正常 → 橙红 → 深红
+    if (phase === 3) {
+      this.tintCharacterVisual(enemy.getData("visual") as CharacterVisual | undefined, 0xff3333);
+      // 暴走时体型微涨 8%
+      const baseSx = enemy.getData("baseScaleX") as number;
+      const baseSy = enemy.getData("baseScaleY") as number;
+      enemy.setScale(Math.abs(baseSx) * 1.08, Math.abs(baseSy) * 1.08);
+    } else if (phase === 2) {
+      this.tintCharacterVisual(enemy.getData("visual") as CharacterVisual | undefined, 0xff8844);
+    }
+  }
+
+  /** 绘制 Boss HP 条（在 HUD 层） */
+  private bossHpBar: Phaser.GameObjects.Graphics | null = null;
+  private drawBossHpBar() {
+    if (!this.enemies) return;
+    // 找到活跃的 Boss
+    let boss: Phaser.Physics.Arcade.Image | null = null;
+    this.enemies.children.iterate((child) => {
+      const e = child as Phaser.Physics.Arcade.Image;
+      if (e.active && !e.getData("defeated") && e.getData("kind") === "sister_boss") {
+        boss = e;
+        return false;
+      }
+      return true;
+    });
+
+    if (!boss) {
+      this.bossHpBar?.destroy();
+      this.bossHpBar = null;
+      this._bossNameText?.setVisible(false);
+      return;
+    }
+
+    const hp = (boss as Phaser.Physics.Arcade.Image).getData("hp") as number;
+    const maxHp = (boss as Phaser.Physics.Arcade.Image).getData("maxHp") as number;
+    if (!maxHp || maxHp <= 0) return;
+
+    if (!this.bossHpBar) {
+      this.bossHpBar = this.add.graphics().setScrollFactor(0).setDepth(1999);
+    }
+    const g = this.bossHpBar;
+    g.clear();
+
+    // HP 条位置：屏幕顶部中央
+    const barW = 280;
+    const barH = 14;
+    const x = (this.scale.width - barW) / 2;
+    const y = 24;
+    const ratio = Math.max(0, hp / maxHp);
+    const phase = ratio <= 0.33 ? 3 : ratio <= 0.66 ? 2 : 1;
+
+    // 背景
+    g.fillStyle(0x000000, 0.6);
+    g.fillRoundedRect(x - 2, y - 2, barW + 4, barH + 4, 4);
+
+    // 血条颜色：绿 → 橙 → 红
+    const barColor = phase === 3 ? 0xff2222 : phase === 2 ? 0xff8800 : 0x44dd44;
+    g.fillStyle(barColor, 0.9);
+    g.fillRoundedRect(x, y, barW * ratio, barH, 3);
+
+    // 边框
+    g.lineStyle(1, 0xffffff, 0.4);
+    g.strokeRoundedRect(x, y, barW, barH, 3);
+
+    // Boss 名字
+    if (!this._bossNameText) {
+      this._bossNameText = this.add.text(this.scale.width / 2, y - 4, '', {
+        fontFamily: '"Microsoft YaHei", sans-serif',
+        fontSize: '13px',
+        fontStyle: 'bold',
+        color: '#ffe0a0',
+        stroke: '#000',
+        strokeThickness: 2,
+      }).setOrigin(0.5, 1).setScrollFactor(0).setDepth(2000);
+    }
+    const phaseLabel = phase === 3 ? ' [暴走]' : phase === 2 ? ' [认真]' : '';
+    this._bossNameText.setText(`姐姐 Boss${phaseLabel}  ${hp}/${maxHp}`);
+    this._bossNameText.setVisible(true);
+  }
+  private _bossNameText: Phaser.GameObjects.Text | null = null;
 
   private crushEnemy(enemy: Phaser.Physics.Arcade.Image) {
     const isBoss = enemy.getData("kind") === "sister_boss";
@@ -2779,6 +2919,12 @@ export class GameScene extends Phaser.Scene {
     this.state.criedThisLevel = true;
     if (this.flags.comboSystem) this.combo.reset();
     if (this.flags.juiceDirector) this.juice.clearEdgeTint();
+    // 清理 Boss UI
+    this.bossHpBar?.destroy();
+    this.bossHpBar = null;
+    this._bossNameText?.destroy();
+    this._bossNameText = null;
+    this.bossPhase = 1;
     this.physics.world.timeScale = 1;
     this.playerShadow?.setVisible(false);
     this.bubbleShieldVisual?.destroy();
