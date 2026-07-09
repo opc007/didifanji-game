@@ -4,7 +4,11 @@ import type { ActiveItem, EnemyKind, EnemySpawn, ItemConfig, LevelConfig, RectSp
 import { MovementController, InputState as MoveInput } from "./MovementController";
 import { JuiceDirector } from "./JuiceDirector";
 import { ComboSystem } from "./ComboSystem";
+import { PerfectDodgeSystem } from "./PerfectDodgeSystem";
 import { ThreatEscalation } from "./ThreatEscalation";
+import { EnhancedAdaptiveAI } from "./EnhancedAdaptiveAI";
+import { EnhancedSisterAI } from "./EnhancedSisterAI";
+import { ProactiveSisterAI } from "./ProactiveSisterAI";
 import { SisterEmotion, EMOTION_TABLE, SISTER_DIALOG } from "./SisterEmotion";
 import { DialogBubble } from "./DialogBubble";
 import { findRecipe, CraftingPrompt } from "./CraftingSystem";
@@ -157,6 +161,11 @@ export class GameScene extends Phaser.Scene {
   private juice = new JuiceDirector(this);
   private combo = new ComboSystem(this);
   private threat = new ThreatEscalation();
+  private perfectDodge = new PerfectDodgeSystem();
+  private adaptiveAI = new EnhancedAdaptiveAI();
+  private proactiveSisterAI = new ProactiveSisterAI();
+  // Enhanced Sister AI 存储所有敌人AI实例
+  private enhancedSisterAIs: Map<string, EnhancedSisterAI> = new Map();
   /** Feature flags（保留可关可调） */
   private flags = {
     movementOverhaul: true,
@@ -216,7 +225,13 @@ export class GameScene extends Phaser.Scene {
     this.movement.reset();
     this.combo.reset();
     this.threat.reset();
+    this.perfectDodge.reset();
+    this.adaptiveAI.resetLevel();
     this.juice.clearEdgeTint();
+    
+    // 清理 Enhanced Sister AI 实例
+    this.enhancedSisterAIs.clear();
+    this.proactiveSisterAI.reset();
 
     // ─── Wave 2.7: 加载反制策略 + Wave 2.5: 加载难度 ──
     import("./AdaptiveAI").then(({ getCounterMeasures }) => {
@@ -1106,6 +1121,14 @@ export class GameScene extends Phaser.Scene {
     if (this.flags.sisterEmotion) {
       enemy.setData("emotion", new SisterEmotion(`${spawn.kind}_${spawn.x}_${this.levelIndex}`));
     }
+    
+    // Enhanced Sister AI 初始化
+    if (this.flags.sisterEmotion) {
+      const enemyId = `${spawn.kind}_${spawn.x}_${this.levelIndex}`;
+      const ai = new EnhancedSisterAI(enemyId, this.adaptiveAI);
+      this.enhancedSisterAIs.set(enemyId, ai);
+    }
+    
     // Boss 阶段初始化
     if (isBoss) {
       enemy.setData("bossPhase", 1);
@@ -1437,6 +1460,37 @@ export class GameScene extends Phaser.Scene {
           enemy.setData("effectiveCooldownMul", emo.getCooldownMul());
         }
       }
+      
+      // Enhanced Sister AI 决策更新
+      if (this.flags.sisterEmotion) {
+        const emo = enemy.getData("emotion") as SisterEmotion | undefined;
+        if (emo) {
+          const enemyId = `${enemy.getData("kind")}_${Math.round(enemy.x)}_${this.levelIndex}`;
+          const ai = this.enhancedSisterAIs.get(enemyId);
+          if (ai) {
+            const playerDistance = Math.abs(this.player.x - enemy.x) + Math.abs(this.player.y - enemy.y);
+            const playerVisible = playerDistance < 600;
+            
+            const playerState = {
+              hp: this.state.hp,
+              maxHp: this.state.maxHp || 3,
+              speed: PLAYER_SPEED,  // 使用常量
+              facing: this.state.facing,
+              position: new Phaser.Math.Vector2(this.player.x, this.player.y)
+            };
+            
+            const decision = ai.update(delta, emo, playerDistance, playerVisible, playerState);
+            if (decision) {
+              ai.recordEncounterOutcome(
+                decision.type === 'attack' ? 'win' : 'retreat',
+                [decision.type],
+                ai.getCurrentStrategy()
+              );
+            }
+          }
+        }
+      }
+      
       const frozenUntil = enemy.getData("frozenUntil") as number | undefined;
       if (frozenUntil && time < frozenUntil) {
         body.setVelocityX(0);
@@ -1514,6 +1568,10 @@ export class GameScene extends Phaser.Scene {
       }
 
       this.updateEnemyPose(enemy, time, !!chaseDirection);
+      
+      // 主动攻击检查 - 在普通攻击之前
+      this.tryInitiativeAttack(enemy, kind as EnemyKind, time);
+      
       this.tryScheduleEnemyThrow(enemy, kind as EnemyKind, time);
       return true;
     });
@@ -2956,12 +3014,12 @@ export class GameScene extends Phaser.Scene {
     if (!this.state.locked || this.state.hp > 0) return;
     const now = this.time.now;
 
-    // 正常重启：restartAt 到期
+    // 正常重启：restartAt 到期，进入失败画面
     const restartAt = this.state.restartAt;
     if (restartAt && now >= restartAt) {
       this.state.restartAt = 0;
       this.state.locked = false;
-      this.scene.start("GameScene", { levelIndex: this.levelIndex });
+      this.scene.start("GameOverScene", { levelIndex: this.levelIndex });
       return;
     }
 
@@ -2970,7 +3028,7 @@ export class GameScene extends Phaser.Scene {
     if (lockedAt && lockedAt > 0 && now - lockedAt > 5000) {
       this.state.restartAt = 0;
       this.state.locked = false;
-      this.scene.start("GameScene", { levelIndex: this.levelIndex });
+      this.scene.start("GameOverScene", { levelIndex: this.levelIndex });
     }
   }
 
@@ -3055,5 +3113,284 @@ export class GameScene extends Phaser.Scene {
       delay: duration,
       duration: 280
     });
+  }
+
+  /**
+   * 主动攻击检查 - 让姐姐主动出击
+   */
+  private tryInitiativeAttack(enemy: Phaser.Physics.Arcade.Image, kind: EnemyKind, time: number) {
+    if (enemy.getData("throwWindup")) return;  // 如果已经在攻击前摇中，跳过
+    
+    const enemyId = `${enemy.getData("kind")}_${Math.round(enemy.x)}_${this.levelIndex}`;
+    const emo = enemy.getData("emotion") as SisterEmotion | undefined;
+    
+    if (!emo) return;
+    
+    const playerDistance = Math.abs(this.player.x - enemy.x) + Math.abs(this.player.y - enemy.y);
+    const playerHp = this.state.hp;
+    const playerMaxHp = this.state.maxHp || 3;
+    const sisterHp = enemy.getData("hp") as number || 1;
+    const sisterMaxHp = enemy.getData("maxHp") as number || 1;
+    
+    // 将情绪状态转换为愤怒程度 (0-1)
+    const emotionLevel = this.getEmotionAggressionLevel(emo.getState());
+    
+    // 检查是否应该主动攻击
+    const result = this.proactiveSisterAI.shouldInitiateAttack(
+      enemyId,
+      kind,
+      this.levelIndex + 1,  // 关卡阶段从1开始
+      playerDistance,
+      playerHp,
+      playerMaxHp,
+      sisterHp,
+      sisterMaxHp,
+      emotionLevel,
+      time
+    );
+    
+    if (result.shouldAttack && result.attackType) {
+      // 执行主动攻击
+      const attackProfile = this.proactiveSisterAI.executeInitiativeAttack(
+        enemyId,
+        kind,
+        result.attackType,
+        this.levelIndex + 1,
+        emotionLevel,
+        time
+      );
+      
+      if (attackProfile) {
+        this.executeInitiativeAttack(enemy, kind, attackProfile, result.selectedStrategy, time);
+      }
+    }
+  }
+  
+  /**
+   * 执行主动攻击
+   */
+  private executeInitiativeAttack(
+    enemy: Phaser.Physics.Arcade.Image, 
+    kind: EnemyKind, 
+    profile: any, 
+    strategy: any,
+    time: number
+  ) {
+    // 开始攻击前摇
+    enemy.setData("initiativeAttack", true);
+    enemy.setData("throwWindup", true);
+    
+    // 保存原始冷却时间
+    const originalNextAttack = enemy.getData("nextAttackAt") as number;
+    enemy.setData("originalNextAttack", originalNextAttack);
+    
+    // 应用攻击策略行为
+    if (strategy) {
+      this.applyAttackStrategy(enemy, strategy, profile);
+    }
+    
+    // 视觉效果 - 更强的攻击前摇提示
+    const visual = enemy.getData("visual") as CharacterVisual | undefined;
+    this.tintCharacterVisual(visual, 0xff6600);  // 橙红色提示主动攻击
+    
+    // 特殊音效
+    const sfxMap: Record<string, string> = {
+      'projectile:comb': 'sfx_sister_hit',
+      'projectile:chair': 'sfx_boss_book_throw',
+      'projectile:book': 'sfx_pipe_sister_pop',
+      'projectile:tracking_orb': 'sfx_boss_book_throw',
+      'projectile:sound_wave': 'sfx_pipe_sister_pop',
+      'projectile:dust_cloud': 'sfx_pipe_sister_pop'
+    };
+    
+    const sfx = sfxMap[profile.key] || 'sfx_pipe_sister_pop';
+    this.sound.play(sfx, { volume: 0.6 });
+    
+    // 攻击对话气泡
+    if (visual && strategy) {
+      const dialog = this.getInitiativeDialog(kind, strategy.type, profile.key);
+      if (dialog) {
+        const target = { x: enemy.x, y: enemy.y - 60 };
+        this.dialog.show(target, {
+          text: dialog,
+          speaker: 'sister',
+          durationMs: 2000,
+          color: '#ff4444'  // 主动攻击时用红色
+        });
+      }
+    }
+    
+    // 延迟执行攻击
+    this.time.delayedCall(profile.windupMs, () => {
+      if (!enemy.active || enemy.getData("defeated")) return;
+      
+      enemy.setData("throwWindup", false);
+      enemy.setData("initiativeAttack", false);
+      this.clearCharacterVisualTint(visual);
+      
+      // 生成投射物
+      this.spawnInitiativeProjectile(enemy, profile, strategy);
+      
+      // 重置攻击冷却
+      const cooldown = profile.cooldown;
+      enemy.setData("nextAttackAt", time + cooldown);
+    });
+  }
+  
+  /**
+   * 生成主动攻击投射物
+   */
+  private spawnInitiativeProjectile(
+    enemy: Phaser.Physics.Arcade.Image,
+    profile: any,
+    strategy: any
+  ) {
+    const direction = this.player.x >= enemy.x ? 1 : -1;
+    const spawnX = enemy.x + direction * 48;
+    const spawnY = enemy.y - 22;
+    
+    // 特殊投射物处理
+    if (profile.specialEffect === 'tracking') {
+      this.spawnTrackingProjectile(enemy, profile, spawnX, spawnY, direction);
+    } else {
+      // 常规投射物
+      const projectile = this.enemyProjectiles.create(spawnX, spawnY, profile.key) as Phaser.Physics.Arcade.Image;
+      
+      // 设置投射物属性
+      this.configureInitiativeProjectile(projectile, profile, direction);
+    }
+  }
+  
+  /**
+   * 生成追踪投射物
+   */
+  private spawnTrackingProjectile(
+    enemy: Phaser.Physics.Arcade.Image,
+    profile: any,
+    spawnX: number,
+    spawnY: number,
+    direction: number
+  ) {
+    const projectile = this.enemyProjectiles.create(spawnX, spawnY, profile.key) as Phaser.Physics.Arcade.Image;
+    
+    this.configureInitiativeProjectile(projectile, profile, direction);
+    
+    // 添加追踪逻辑
+    projectile.setData("tracking", true);
+    projectile.setData("targetX", this.player.x);
+    projectile.setData("targetY", this.player.y);
+    projectile.setData("trackingUntil", this.time.now + (profile.trackingDuration || 3000));
+  }
+  
+  /**
+   * 配置主动攻击投射物属性
+   */
+  private configureInitiativeProjectile(
+    projectile: Phaser.Physics.Arcade.Image,
+    profile: any,
+    direction: number
+  ) {
+    const size = this.getProjectileSize(profile.key);
+    projectile.setDisplaySize(size.w, size.h);
+    projectile.setData("spin", 8);
+    projectile.setData("nextTrailAt", 0);
+    projectile.setData("enemyThrown", true);
+    projectile.setData("damage", profile.damage);
+    projectile.setData("specialEffect", profile.specialEffect);
+    
+    projectile.setVelocityX(profile.speedX * direction);
+    projectile.setVelocityY(profile.speedY);
+    projectile.setDepth(11);
+    (projectile.body as Phaser.Physics.Arcade.Body).setAllowGravity(profile.gravity);
+    
+    // 主动攻击特效
+    projectile.setTint(0xffaa00);  // 金色光芒
+    
+     // TODO: 添加到完美闪避威胁系统
+     // const distanceToPlayer = Math.abs(projectile.x - this.player.x);
+     // const projectileSpeed = Math.abs(profile.speedX);
+     // if (projectileSpeed > 0) {
+     //   const timeToHit = (distanceToPlayer / projectileSpeed) * 1000;
+     //   const dangerTime = this.time.now;
+     //   const estimatedHitTime = dangerTime + timeToHit;
+     //   this.perfectDodge.addThreat(projectile, 'projectile', dangerTime, estimatedHitTime);
+     // }
+  }
+  
+  /**
+   * 获取投射物尺寸
+   */
+  private getProjectileSize(key: string): { w: number; h: number } {
+    const sizeMap: Record<string, { w: number; h: number }> = {
+      'projectile:comb': { w: 30, h: 24 },
+      'projectile:chair': { w: 42, h: 36 },
+      'projectile:book': { w: 28, h: 22 },
+      'projectile:bottle': { w: 24, h: 30 },
+      'projectile:tracking_orb': { w: 32, h: 32 },
+      'projectile:sound_wave': { w: 48, h: 20 },
+      'projectile:dust_cloud': { w: 56, h: 40 }
+    };
+    return sizeMap[key] || { w: 26, h: 26 };
+  }
+  
+  /**
+   * 应用攻击策略
+   */
+  private applyAttackStrategy(enemy: Phaser.Physics.Arcade.Image, strategy: any, profile: any) {
+    // 根据策略调整攻击参数
+    if (strategy.behavior.attackFrequency > 1.2) {
+      // 高频率攻击模式 - 更强的视觉提示
+      this.tintCharacterVisual(enemy.getData("visual") as CharacterVisual | undefined, 0xff0000);
+    }
+    
+    // 设置移动模式相关数据
+    enemy.setData("currentStrategy", strategy.name);
+    enemy.setData("movementPattern", strategy.behavior.movementPattern);
+  }
+  
+  /**
+   * 获取主动攻击对话
+   */
+  private getInitiativeDialog(kind: EnemyKind, strategyType: string, projectileKey: string): string | null {
+    const dialogMap: Record<string, string[]> = {
+      'aggressive': [
+        "看招！",
+        "接好了！", 
+        "给我接住！",
+        "别想躲！"
+      ],
+      'tactical': [
+        "战术调整！",
+        "改变策略！",
+        "这样如何？",
+        "尝尝这个！"
+      ],
+      'desperate': [
+        "我和你拼了！",
+        "别太小看我！",
+        "还没完呢！",
+        "我不会认输的！"
+      ]
+    };
+    
+    const dialogs = dialogMap[strategyType] || dialogMap['aggressive'];
+    return Phaser.Utils.Array.GetRandom(dialogs);
+  }
+  
+  /**
+   * 将情绪状态转换为攻击性程度
+   */
+  private getEmotionAggressionLevel(state: string): number {
+    const aggressionMap: Record<string, number> = {
+      'idle': 0.1,
+      'aware': 0.2,
+      'patrol': 0.3,
+      'tsundere': 0.4,
+      'annoyed': 0.6,
+      'wrath': 0.9,
+      'cry': 0.3,
+      'defeat': 0.0
+    };
+    return aggressionMap[state] || 0.5;
   }
 }

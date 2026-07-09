@@ -23,7 +23,8 @@ export type JuiceEvent =
   | "item_pickup"  // 捡道具
   | "boss_phase"   // Boss 阶段切换
   | "boss_defeat"
-  | "goal";        // 通关
+  | "goal"         // 通关
+  | "perfect_dodge"; // 完美闪避
 
 interface JuiceRecipe {
   hitstopMs: number;
@@ -46,6 +47,7 @@ const RECIPES: Record<JuiceEvent, JuiceRecipe> = {
   boss_phase:   { hitstopMs: 120, shake: { duration: 220, intensity: 0.01 }, flash: { color: 0xffffff, alpha: 0.6, duration: 120 } },
   boss_defeat:  { hitstopMs: 200, shake: { duration: 320, intensity: 0.012 }, flash: { color: 0xffffff, alpha: 0.8, duration: 200 }, zoom: { target: 1.05, duration: 220 } },
   goal:         { hitstopMs: 100, shake: { duration: 0,   intensity: 0 }, zoom: { target: 1.04, duration: 200 } },
+  perfect_dodge: { hitstopMs: 80, shake: { duration: 200, intensity: 0.008 }, flash: { color: 0x00ffff, alpha: 0.5, duration: 200 } },
 };
 
 export class JuiceDirector {
@@ -131,6 +133,11 @@ export class JuiceDirector {
       this.tintOverlay.destroy();
       this.tintOverlay = undefined;
     }
+  }
+  
+  // 新增：快捷闪光方法
+  flash(color: number, alpha: number, duration: number) {
+    this.flashScreen(color, alpha, duration);
   }
 
   private flashScreen(color: number, alpha: number, duration: number) {

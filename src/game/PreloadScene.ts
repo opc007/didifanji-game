@@ -27,6 +27,8 @@ export class PreloadScene extends Phaser.Scene {
       this.load.image(`hud:${item.id}`, assetUrl(item.hudIcon));
     });
 
+// 注意: sfx_combo_bonus 音频文件不存在，已在 ComboSystem 中使用 sfx_toy_hammer_hit 替代
+
     transitionManifest.transitions.forEach((entry: TransitionEntry) => {
       this.load.image(entry.key, assetUrl(entry.image));
     });
